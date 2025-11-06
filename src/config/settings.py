@@ -1,4 +1,4 @@
-BASE_URL = "https://qatrack.elice.io/ai-helpy-chat"
+BASE_URL = "https://qaproject.elice.io/ai-helpy-chat"
 DEFAULT_TIMEOUT = 10
 HEADLESS = False
 ACCOUNTS = {
