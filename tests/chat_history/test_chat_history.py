@@ -83,7 +83,46 @@ def test_chat_history_display(login, driver):
 #     if not has_scrollbar:
 #         page.take_screenshot("CHAT-HIS-002_error.png")
 
-# # ----------------------- CHAT-HIS-003 -----------------------
+@pytest.mark.ui
+@pytest.mark.medium
+def test_chat_history_scroll(login, driver):
+    driver = login("team4@elice.com", "team4elice!@")  # 로그인 후 세션 유지
+
+    # iframe이 로딩될 때까지 기다리고 프레임 전환
+    iframe = WebDriverWait(driver, 10).until(
+        EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe#ch-plugin-script-iframe"))
+    )
+
+    # ✅ 불필요한 채팅 목록 대기 제거
+    # 기존 코드:
+    # CHAT_HISTORY = (By.CSS_SELECTOR, "a[data-index]")
+    # try:
+    #     WebDriverWait(driver, 10).until(
+    #         EC.presence_of_all_elements_located(CHAT_HISTORY)
+    #     )
+    #     print("채팅 목록이 화면에 존재하여 DOM이 로딩 완료됨")
+    # except TimeoutException:
+    #     print("채팅 목록이 존재하지 않음 (정상 상태일 수 있음)")
+
+    # 스크롤 영역 확인
+    try:
+        chat_area = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-scroller"]'))
+        )
+        has_scrollbar = driver.execute_script(
+            "return arguments[0].scrollHeight > arguments[0].clientHeight;", chat_area
+        )
+        if has_scrollbar:
+            print("스크롤 영역 존재: 스크롤 가능")
+        else:
+            print("스크롤 영역 존재하지만, 채팅이 충분하지 않아 스크롤 필요 없음")
+    except TimeoutException:
+        print("스크롤 영역 자체가 존재하지 않음")
+
+    # 기본 프레임 돌아오기
+    driver.switch_to.default_content()
+
+# ----------------------- CHAT-HIS-003 -----------------------
 # @pytest.mark.ui
 # @pytest.mark.medium
 # def test_chat_history_sort_order(page):
@@ -96,6 +135,43 @@ def test_chat_history_display(login, driver):
 #     if texts != sorted(texts, reverse=True):
 #         page.take_screenshot("CHAT-HIS-003_error.png")
 #         assert False, "채팅 히스토리가 내림차순으로 정렬되어 있지 않습니다."
+@pytest.mark.ui
+@pytest.mark.medium
+def test_chat_history_sort_order(login, driver):
+    driver = login("team4@elice.com", "team4elice!@")  # 로그인 후 세션 유지
+
+    # ✅ 1. iframe이 로딩될 때까지 기다리고 전환 (TC2와 동일)
+    iframe = WebDriverWait(driver, 10).until(
+        EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe#ch-plugin-script-iframe"))
+    )
+
+    # ✅ 2. 채팅 영역 렌더링 확인 (스크롤 영역 존재 확인)
+    try:
+        chat_area = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-scroller"]'))
+        )
+        print("채팅 영역 로딩 완료")
+    except TimeoutException:
+        print("채팅 영역 로딩 실패")
+        driver.switch_to.default_content()
+        assert False, "채팅 영역이 존재하지 않아 정렬 확인 불가"
+
+    # ✅ 3. 채팅 목록 가져오기 (DOM 존재 여부 확인)
+    CHAT_ITEMS = chat_area.find_elements(By.CSS_SELECTOR, "a[data-index]")
+    if not CHAT_ITEMS:
+        driver.switch_to.default_content()
+        driver.save_screenshot("CHAT-HIS-003_no_items.png")
+        assert False, "채팅 아이템이 존재하지 않아 정렬 확인 불가"
+
+    # ✅ 4. 텍스트 리스트로 변환 후 내림차순 비교
+    texts = [item.text for item in CHAT_ITEMS]
+    if texts != sorted(texts, reverse=True):
+        driver.save_screenshot("CHAT-HIS-003_error.png")
+        driver.switch_to.default_content()
+        assert False, "채팅 히스토리가 내림차순으로 정렬되어 있지 않습니다."
+
+    # ✅ 5. 테스트 종료 후 기본 프레임으로 복귀
+    driver.switch_to.default_content()
 
 # # ----------------------- CHAT-HIS-004 -----------------------
 # @pytest.mark.ui
@@ -242,4 +318,3 @@ def test_chat_history_display(login, driver):
 #     # 삭제가 반영되었는지 체크
 #     new_first_text = items[0].get_text()
 #     assert new_first_text != first_item_text, f"삭제 실패: '{first_item_text}'가 여전히 목록에 있음"
-
