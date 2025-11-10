@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+*.log
+
+# Env
+venv/
+.venv/
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# Dist/Coverage
+dist/
+build/
+*.egg-info/
+htmlcov/
+.coverage*
+
+# (옵션) 드라이버/다운로드
+drivers/
