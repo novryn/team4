@@ -7,9 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-
-APP_URL = os.getenv("APP_URL", "http://localhost:3000")
-WAIT_SEC = int(os.getenv("WAIT_SEC", 10))
+from pages.base_page import BasePage  
 
 @pytest.fixture
 def driver():
@@ -55,6 +53,11 @@ def login(driver):
         pw_input.send_keys(password)
 
         driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-        WebDriverWait(driver, 10).until(EC.url_contains("/ai-helpy-chat"))
+        WebDriverWait(driver, 30).until(EC.url_contains("/ai-helpy-chat"))
         return driver
     return _login
+
+@pytest.fixture
+def page(driver):
+    
+    return BasePage(driver) # 모든 테스트에서 BasePage 객체 재사용 (11/10 김은아. 해당 기능 추가)

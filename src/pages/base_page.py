@@ -14,7 +14,7 @@ class BasePage:
         
         # 웹 페이지 열기
         
-    def wait_for_element(self, locator, timeout=10):
+    def wait_for_element(self, locator, timeout=30):
         
         return WebDriverWait(self.driver, timeout).until(
             EC.visibility_of_element_located(locator)
@@ -66,5 +66,22 @@ class BasePage:
         self.driver.save_screenshot(name)
 
         # 테스트 실패 화면 캡처 저장
+        
+    def wait_for_iframe_element(self, iframe_locator, element_locator, timeout=30):
+        
+        # iframe 나타날 때까지 대기
+        iframe = WebDriverWait(self.driver, timeout).until(
+            EC.presence_of_element_located(iframe_locator)
+        )
+        self.driver.switch_to.frame(iframe)
+
+        # iframe 안 요소 기다리기(iframe_locator: iframe 찾는 locator (By.ID, By.CSS_SELECTOR 등), element_locator: iframe 안 요소 locator)
+        element = WebDriverWait(self.driver, timeout).until(
+            EC.visibility_of_element_located(element_locator)
+        )
+
+        # 기본 프레임으로 돌아오기
+        self.driver.switch_to.default_content()
+        return element
         
         #11/10 김은아 작성
