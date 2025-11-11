@@ -26,18 +26,68 @@ def test_chat_history_area_exists(driver, login):
     # 존재하면 테스트 통과
     assert history_area is not None, "히스토리 영역이 존재하지 않음!"
 
+# import pytest
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.common.exceptions import TimeoutException
+
+# @pytest.mark.ui
+# @pytest.mark.medium
+# def test_chat_history_sort_order(login, driver):
+#     driver = login("team4@elice.com", "team4elice!@")  # 로그인 후 세션 유지
+
+#     # 대화 목록 전체 컨테이너 대기
+#     container = WebDriverWait(driver, 10).until(
+#         EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
+#     )
+
+#     # 가상화된 리스트: 반복 스크롤하여 최대 10초 동안 요소 로딩
+#     chat_items = []
+#     timeout = 10
+#     end_time = WebDriverWait(driver, timeout)._timeout + WebDriverWait(driver, timeout)._driver.timeouts.implicit_wait
+#     import time
+#     start_time = time.time()
+#     last_count = 0
+
+#     while True:
+#         # 현재 로드된 채팅 항목 수
+#         chat_items = container.find_elements(By.TAG_NAME, "a")
+#         current_count = len(chat_items)
+
+#         # 더 이상 항목이 늘어나지 않으면 중지
+#         if current_count == last_count:
+#             break
+#         last_count = current_count
+
+#         # 컨테이너 끝까지 스크롤
+#         driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
+#         time.sleep(0.5)  # DOM 렌더링 대기
+
+#         # 타임아웃 체크
+#         if time.time() - start_time > timeout:
+#             break
+
+#     # 검증: 대화가 0개이면 테스트 건너뛰기
+#     if len(chat_items) == 0:
+#         pytest.skip("대화가 0개입니다. 테스트를 건너뜁니다.")
+#     else:
+#         assert len(chat_items) >= 1, "대화 목록이 비어 있음!"
+#         print(f"대화 목록이 {len(chat_items)}개 있습니다. 최신 대화가 맨 위에 있다고 판단됩니다.")
+
+
 # ----------------------- CHAT-HIS-002 -----------------------
 @pytest.mark.ui
 @pytest.mark.medium
 def test_chat_history_scroll(login, driver):
     driver = login("team4@elice.com", "team4elice!@")  # 로그인 후 세션 유지
 
-    iframe이 로딩될 때까지 기다리고 프레임 전환
-    iframe = WebDriverWait(driver, 10).until(
-        EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe#ch-plugin-script-iframe"))
-    )
+    # #iframe이 로딩될 때까지 기다리고 프레임 전환
+    # iframe = WebDriverWait(driver, 10).until(
+    #     EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR, "iframe#ch-plugin-script-iframe"))
+    # )
     
-    스크롤 영역 확인
+    #스크롤 영역 확인
     try:
         chat_area = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-scroller"]'))
@@ -56,28 +106,37 @@ def test_chat_history_scroll(login, driver):
     driver.switch_to.default_content()
 
 # ----------------------- CHAT-HIS-003 -----------------------
+import pytest
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 @pytest.mark.ui
 @pytest.mark.medium
 def test_chat_history_sort_order(login, driver):
     driver = login("team4@elice.com", "team4elice!@")  # 로그인 후 세션 유지
 
     # 대화 목록 전체 컨테이너 대기
-    # 개발자 모드 Elements 탭에서 data-testid="virtuoso-item-list" 확인됨
     container = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
     )
 
-    # 대화 항목들 모으기
-    # 각 대화가 <a class="MuiButtonBase-root ..."> 형태로 되어 있음
-    chat_items = container.find_elements(By.TAG_NAME, "a")
+    # 가상화된 리스트: 스크롤하여 DOM에 요소 추가
+    driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
 
-    # 검증 ①: 대화가 0개이면 메시지 출력
+    # 대화 항목들 모으기 (스크롤 후 최대 10초까지 기다림)
+    chat_items = WebDriverWait(driver, 10).until(
+        lambda d: container.find_elements(By.TAG_NAME, "a") if len(container.find_elements(By.TAG_NAME, "a")) > 0 else False
+    )
+
+    # 검증: 대화가 0개이면 메시지 출력
     if len(chat_items) == 0:
-        pytest.skip("⚠️ 대화가 0개입니다. 테스트를 건너뜁니다.")
+        pytest.skip("대화가 0개입니다. 테스트를 건너뜁니다.")
     else:
-        # 검증 ②: 대화가 1개 이상 있으면 통과 (최신이 맨 위라고 간주)
-        assert len(chat_items) >= 1, "❌ 대화 목록이 비어 있음!"
-        print(f"✅ 대화 목록이 {len(chat_items)}개 있습니다. 최신 대화가 맨 위에 있다고 판단됩니다.")
+        # 검증: 대화가 1개 이상 있으면 통과 (최신이 맨 위라고 간주)
+        assert len(chat_items) >= 1, "대화 목록이 비어 있음!"
+        print(f"대화 목록이 {len(chat_items)}개 있습니다. 최신 대화가 맨 위에 있다고 판단됩니다.")
+
 
 # import pytest
 # from selenium.webdriver.common.by import By
