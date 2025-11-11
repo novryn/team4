@@ -10,9 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
-
-APP_URL = os.getenv("APP_URL", "http://localhost:3000")
-WAIT_SEC = int(os.getenv("WAIT_SEC", 10))
+from pages.base_page import BasePage  
 
 ARTIFACT_DIR = os.getenv("ARTIFACT_DIR", "artifacts")  # 저장 폴더
 CAPTURE_ON_XFAIL = os.getenv("CAPTURE_ON_XFAIL", "0") == "1"  # XFAIL도 캡처할지
@@ -88,11 +86,11 @@ def login(driver):
         pw_input.send_keys(password)
 
         driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-        WebDriverWait(driver, 10).until(EC.url_contains("/ai-helpy-chat"))
+        WebDriverWait(driver, 30).until(EC.url_contains("/ai-helpy-chat"))
         return driver
     return _login
 
-# ------------------------------------ 실패 아티팩트 공통 훅 ------------------------------------
+# ------- 실패 아티팩트 공통 훅 ----------------------------------
 
 # 각 테스트 단계(setup/call/teardown) 리포트를 node에 붙여줌
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
@@ -125,3 +123,8 @@ def _auto_artifacts_on_fail(request, driver):
     # xfail 시 캡처는 "스위치"로 제어
     if CAPTURE_XFAIL and rep_call and rep_call.skipped and "xfail" in rep_call.keywords:
         _capture(driver, nodeid, tag="xfail")
+              
+@pytest.fixture
+def page(driver):
+    
+    return BasePage(driver) # 모든 테스트에서 BasePage 객체 재사용 (11/10 김은아. 해당 기능 추가)
