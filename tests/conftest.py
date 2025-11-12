@@ -1,4 +1,11 @@
 import os
+import sys
+
+# sys.path 설정을 맨 위로 (다른 import보다 먼저)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+sys.path.insert(0, os.path.join(project_root, 'src'))
+
 import re
 import pytest
 from datetime import datetime
