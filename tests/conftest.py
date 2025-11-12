@@ -49,19 +49,49 @@ def _capture(driver, nodeid: str, tag: str = "fail"):
     print(f"[artifact] {png}")
     print(f"[artifact] {html}")
 
-@pytest.fixture
-def driver():
-    """각 테스트마다 새 브라우저"""
+
+@pytest.fixture(scope="session") # 11/13 황지애. chrome_options, chrome_driver_path 추가. driver 수정
+def chrome_options():
+    """Chrome 옵션을 세션당 한 번만 생성"""
     opts = Options()
+    
     if os.getenv("HEADLESS", "0") == "1":
         opts.add_argument("--headless=new")
+    
+    opts.add_argument("--window-size=1920,1080")
+    opts.add_argument("--disable-gpu")
+    opts.add_argument("--no-sandbox")
+    opts.add_argument("--disable-dev-shm-usage")
+    
+    return opts
+
+# ChromeDriver 경로를 세션당 한 번만 설정
+@pytest.fixture(scope="session")
+def chrome_driver_path():
+    """ChromeDriver 경로를 세션 시작 시 한 번만 가져옴"""
+    path = ChromeDriverManager().install()
+    print(f"\n[Setup] ChromeDriver 경로: {path}")
+    return path
+
+@pytest.fixture
+def driver(chrome_driver_path):
+    """각 테스트마다 새 브라우저 인스턴스 생성"""
+    opts = Options()
+    
+    # Headless 모드 설정
+    if os.getenv("HEADLESS", "0") == "1":
+        opts.add_argument("--headless=new")
+    
     opts.add_argument("--window-size=1920,1080")
     
-    service = Service(ChromeDriverManager().install())
-    d = webdriver.Chrome(service=service, options=opts)
+    # ChromeDriver 서비스 생성 (이미 설치된 경로 재사용)
+    service = Service(chrome_driver_path)
+    browser = webdriver.Chrome(service=service, options=opts)
     
-    yield d
-    d.quit()
+    yield browser
+    
+    # 테스트 종료 후 브라우저 닫기
+    browser.quit()
 
 @pytest.fixture
 def login(driver):
