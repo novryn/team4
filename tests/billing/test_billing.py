@@ -588,6 +588,62 @@ def test_payment_history_page_permission_denied(driver, login):
     page_text = (driver.page_source or "").lower()
     pytest.xfail(f"권한 없음으로 결제 내역 접근 불가 (env 제약). URL={current_url}")
 
+# BILL-011
+def test_credit_page_ui_elements(driver, login):
+    driver = login("team4@elice.com", "team4elice!@")
+    wait = WebDriverWait(driver, 10)
+    
+    sel_credit = "a[href$='/admin/org/billing/payments/credit']"
+    credit_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, sel_credit)))
+    
+    time.sleep(0.3)
+    
+    original_window = driver.current_window_handle
+    credit_btn.click()
+    
+    if len(driver.window_handles) > 1:
+        driver.switch_to.window(driver.window_handles[-1])
+    
+    wait.until(EC.url_contains("/credit"))
+    
+    # ✅ 각 요소까지 스크롤하면서 확인
+    elements_to_check = [
+        ("크레딧 이용권 구매", ["크레딧 이용권 구매", "이용권 구매"]),
+        ("크레딧 자동 충전", ["크레딧 자동 충전", "자동 충전"]),
+        ("크레딧 사용 내역", ["크레딧 사용 내역", "사용 내역"])
+    ]
+    
+    print("\n=== 요소별 스크롤 확인 ===")
+    
+    for name, patterns in elements_to_check:
+        found = False
+        
+        for pattern in patterns:
+            try:
+                element = driver.find_element(By.XPATH, f"//*[contains(text(), '{pattern}')]")
+                
+                # ✅ 요소까지 부드럽게 스크롤
+                print(f"\n'{name}' 위치로 스크롤 중...")
+                driver.execute_script("""
+                    arguments[0].scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                """, element)
+                
+                time.sleep(0.1)  # 스크롤 애니메이션 + 확인 시간
+                
+                assert element.is_displayed()
+                print(f"✅ {name}")
+                found = True
+                break
+            except:
+                pass
+        
+        assert found, f"{name}를 찾을 수 없음"
+    
+    print("\n✅ 모든 UI 요소 확인 완료")
+
 # BILL-012 (PG 결제창 확인까지만 검증)
 def test_register_payment_method_until_currency_confirm(driver, login):
     # 1) 로그인
