@@ -368,4 +368,4 @@ def test_custom_008_agent_creation_ui_text(login, driver):
         if not text:
             pytest.fail("UI 텍스트 일부 누락")
     print("UI 텍스트 모두 정상 표시")
-
+ 
