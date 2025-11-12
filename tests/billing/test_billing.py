@@ -3,7 +3,6 @@ import time
 import os
 import re
 from PIL import Image
-import numpy as np
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -204,15 +203,6 @@ def _hover_strong(driver, el):
             e.dispatchEvent(new MouseEvent(type, {bubbles:true, cancelable:true}));
         }
     """, el)
-
-def _pixel_diff(img_before, img_after, bbox):
-    # bbox = (x1,y1,x2,y2) crop area
-    b = img_before.crop(bbox).convert("RGB")
-    a = img_after.crop(bbox).convert("RGB")
-    arr_b = np.array(b).astype(np.int16)
-    arr_a = np.array(a).astype(np.int16)
-    diff = np.abs(arr_b - arr_a).mean()  # 평균 픽셀 차이
-    return diff
 
 def _style_snapshot(driver, el):
     props = [
@@ -742,3 +732,4 @@ def test_register_payment_method_until_currency_confirm(driver, login):
     else:
         print("⚠️ PG 결제창 프레임을 감지하지 못했습니다. (새 탭·정책·지연 가능)")
         pytest.fail("PG 결제창 감지 실패")
+
