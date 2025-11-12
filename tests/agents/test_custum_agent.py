@@ -6,6 +6,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from pages.base_page import BasePage  # 공통 기능 상속용
 
+# 주석 처리 된 부분은 테스트 PASS 완료 된 부분 + 아직 점검 필요한 부분을 주석 처리
 # -----------------------001 -----------------------
 @pytest.mark.ui
 @pytest.mark.medium
