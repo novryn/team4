@@ -30,3 +30,4 @@ drivers/
 artifacts/
 *.png
 *.html
+*.pyc
