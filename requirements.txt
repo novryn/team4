@@ -1,5 +1,16 @@
-certifi==2025.10.5
-charset-normalizer==3.4.4
-idna==3.11
+# 핵심 패키지만 명시. 나머지는 자동 설치됨 (11/13 황지애 수정)
+
+# Web Automation
+selenium==4.38.0
+webdriver-manager==4.0.2
+
+# Testing
+pytest==8.4.2
+pytest-base-url==2.1.0
+
+# HTTP
 requests==2.32.5
-urllib3==2.5.0
+
+# Utils
+python-dotenv==1.2.1
+colorama==0.4.6
