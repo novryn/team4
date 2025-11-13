@@ -33,24 +33,43 @@ def test_chat_history_area_exists(driver, login):
 def test_chat_history_scroll(login, driver):
     
     driver = login("team4@elice.com", "team4elice!@")  # 로그인 후 세션 유지
-    
-    #스크롤 영역 확인
+
     try:
-        chat_area = WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-scroller"]'))
+        # 대화 목록 전체 컨테이너 대기
+        container = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
         )
+
+        # 컨테이너에 스크롤 내려서 DOM에 요소 강제 렌더링
+        driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
+
+        # 대화 항목들 모으기
+        chat_items = WebDriverWait(driver, 10).until(
+            lambda d: container.find_elements(By.TAG_NAME, "a") or False
+        )
+
+        assert len(chat_items) > 0, "대화 항목이 존재하지 않습니다."
+        print(f"대화 목록이 {len(chat_items)}개 있습니다.")
+
+        # 스크롤 영역 확인
+        chat_area = driver.find_element(By.CSS_SELECTOR, '[data-testid="virtuoso-scroller"]')
         has_scrollbar = driver.execute_script(
             "return arguments[0].scrollHeight > arguments[0].clientHeight;", chat_area
         )
         if has_scrollbar:
             print("스크롤 영역 존재: 스크롤 가능")
         else:
-            print("스크롤 영역 존재하지만, 채팅이 충분하지 않아 스크롤 필요 없음")
-    except TimeoutException:
-        print("스크롤 영역 자체가 존재하지 않음")
+            print("스크롤 영역 존재하지만, 대화가 충분하지 않아 스크롤 필요 없음")
 
-    # 기본 프레임 돌아오기
-    driver.switch_to.default_content()
+        assert chat_area is not None
+        assert isinstance(has_scrollbar, bool)
+
+    except TimeoutException:
+        pytest.fail("대화 컨테이너나 항목이 로드되지 않아 테스트를 진행할 수 없습니다.")
+
+    finally:
+        # 기본 프레임 돌아오기
+        driver.switch_to.default_content()
 
 #----------------------- CHAT-HIS-003 -----------------------
 @pytest.mark.ui
@@ -94,12 +113,12 @@ def test_chat_titles_have_ellipsis(login, driver):
     scroller = wait.until(
         EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="virtuoso-scroller"]'))
     )
+    assert scroller is not None, "스크롤러 영역이 존재하지 않습니다."
 
     # 제목들 로딩
     titles = wait.until(
         EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'p.MuiTypography-root.MuiTypography-inherit.css-ff35j5'))
     )
-
     assert titles, "채팅 제목이 하나도 없습니다."
 
     ellipsis_found = False
@@ -119,10 +138,8 @@ def test_chat_titles_have_ellipsis(login, driver):
             ellipsis_found = True
             break
 
-    if ellipsis_found:
-        print("제목 요약(ellipsis) CSS 속성이 적용되어 있습니다.")
-    else:
-        pytest.fail("CSS 상으로 ellipsis 속성이 적용되지 않았습니다.")
+    # 최종 확인
+    assert ellipsis_found, "CSS 상으로 ellipsis 속성이 적용되지 않았습니다."
 
 # ----------------------- CHAT-HIS-005 -----------------------
 @pytest.mark.ui
@@ -130,31 +147,54 @@ def test_chat_titles_have_ellipsis(login, driver):
 
 def test_chat_history_menu_open(login, driver):
     
-    driver = login("team4@elice.com", "team4elice!@")  # 로그인 후 세션 유지
-    
-    # 대화 목록 전체 컨테이너 대기
-    container = WebDriverWait(driver, 10).until(
+    driver = login("team4@elice.com", "team4elice!@")
+    wait = WebDriverWait(driver, 20)
+
+    # 대화 목록 컨테이너 대기
+    container = wait.until(
         EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
     )
+    assert container is not None, "대화 목록 컨테이너가 존재하지 않습니다."
 
-    # 가상화된 리스트: 스크롤하여 DOM에 요소 추가
+    # 리스트 스크롤
     driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
 
-    # 대화 항목들 모으기 (스크롤 후 최대 10초까지 기다림)
+    # 채팅 항목 존재 확인
     chat_items = WebDriverWait(driver, 10).until(
         lambda d: container.find_elements(By.TAG_NAME, "a") if len(container.find_elements(By.TAG_NAME, "a")) > 0 else False
     )
-    
-    locator = (By.CSS_SELECTOR, "button[data-testid='ellipsis-verticalIcon']")
-    
+    assert chat_items, "대화 항목이 하나도 없습니다."
+
+    # 메뉴 버튼 클릭
+    locator = (By.CSS_SELECTOR, "svg[data-testid='ellipsis-verticalIcon']")
     try:
-        menu_button = WebDriverWait(page.driver, 20).until(
-            EC.visibility_of_element_located(locator)
+        menu_button = wait.until(
+            EC.element_to_be_clickable(locator)
         )
+        assert menu_button is not None, "메뉴 버튼이 존재하지 않습니다."
         menu_button.click()
         print("점 버튼 클릭 성공")
     except TimeoutException:
-        print("점 버튼 요소 안보임")
+        pytest.fail("점 버튼 요소가 보이지 않아 클릭할 수 없습니다.")
+
+    # 팝업 내 Rename / Delete 버튼 존재 확인
+    try:
+        rename_button = wait.until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "span.MuiTypography-root.MuiTypography-body2.MuiListItemText-primary.css-1wasf2a")
+            )
+        )
+        delete_button = wait.until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "p.MuiTypography-root.MuiTypography-inherit.css-1815kkh")
+            )
+        )
+        assert rename_button.is_displayed(), "Rename 버튼이 없습니다."
+        assert delete_button.is_displayed(), "Delete 버튼이 없습니다."
+        print("팝업 내 Rename / Delete 버튼 존재 확인")
+        
+    except TimeoutException:
+        pytest.fail("팝업 내 Rename / Delete 버튼을 찾을 수 없습니다.")
 
 # ----------------------- CHAT-HIS-006 -----------------------
 @pytest.mark.ui
@@ -277,7 +317,7 @@ def test_chat_history_delete(page):
     new_first_text = items[0].get_text()
     assert new_first_text != first_item_text, f"삭제 실패: '{first_item_text}'가 여전히 목록에 있음"
 
------------------------ CHAT-HIS-11 -----------------------
+#----------------------- CHAT-HIS-11 -----------------------
 @pytest.mark.ui
 @pytest.mark.low
 
