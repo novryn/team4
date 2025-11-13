@@ -180,47 +180,58 @@ def test_chat_history_menu_open(login, driver):
     assert delete_button.is_displayed(), "Delete 버튼이 보이지 않습니다."
     print("팝업 내 Rename / Delete 버튼 존재 확인")
 
-# # ----------------------- CHAT-HIS-006 -----------------------
-# @pytest.mark.ui
-# @pytest.mark.medium
-# def test_chat_history_edit_popup(page):
-    
-#     # 점 메뉴 클릭
-#     page.click((By.CSS_SELECTOR, "button[data-testid='ellipsis-verticalIcon']"))
+#----------------------- CHAT-HIS-006 -----------------------
+@pytest.mark.ui
+@pytest.mark.medium
 
-#     # Rename / Delete 메뉴 클릭
-#     menu_items = page.wait_for_element((By.CSS_SELECTOR, "ul.MuiMenu-list"))
-#     for item in menu_items.find_elements(By.CSS_SELECTOR, "li.MuiMenuItem-root"):
-#         if "Rename" in item.text or "Delete" in item.text:
-#             item.click()
-#             break
+def testchat_history_load_old_conversation(login, driver):
 
-#     # 팝업창 확인
-#     popup = page.wait_for_element((By.CSS_SELECTOR, "div.MuiDialog-paper"))
-#     if not popup.is_displayed():
-#         page.take_screenshot("CHAT-HIS-006_error.png")
+    driver = login("team4@elice.com", "team4elice!@")
+    wait = WebDriverWait(driver, 20)
+
+    # 대화 목록 컨테이너 기다리기
+    container = wait.until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
+    )
+    assert container is not None, "대화 목록 컨테이너가 존재하지 않습니다."
+
+    # 컨테이너 스크롤 내려서 렌더링 강제
+    driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
+
+    # 채팅 항목 존재 확인
+    chat_items = WebDriverWait(driver, 10).until(
+        lambda d: container.find_elements(By.TAG_NAME, "a") or False
+    )
+    assert chat_items, "대화 항목이 하나도 없습니다."
+
+    # ⭐ 3. 첫 번째 대화 항목 클릭
+    chat_items = wait.until(
+        lambda d: container.find_elements(By.TAG_NAME, "a") if len(container.find_elements(By.TAG_NAME, "a")) > 0 else False
+    )
+    assert chat_items, "대화 항목이 하나도 없습니다."
+
+    first_conversation = chat_items[0]
+    first_conversation.click()
+    print(f"✅ 첫 번째 대화 클릭 완료: {first_conversation.text}")
+
+    # ⭐ 4. 오른쪽 대화 영역에서 이전 대화 메시지 로드 확인
+    try:
+        chat_messages = wait.until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[role='article']"))
+        )
+        assert chat_messages, "오른쪽 대화 영역에 메시지가 표시되지 않았습니다."
+        print(f"✅ 오른쪽 화면에 {len(chat_messages)}개의 메시지 로드됨")
+
+        # 필요 시 텍스트 확인
+        for idx, msg in enumerate(chat_messages):
+            text = msg.text.strip()
+            print(f"[{idx}] 메시지: {text[:50]}{'...' if len(text)>50 else ''}")
+
+    except TimeoutException:
+        pytest.fail("오른쪽 대화 영역의 메시지 로드에 실패했습니다.")
+
 
 # # ----------------------- CHAT-HIS-007 -----------------------
-# @pytest.mark.function
-# @pytest.mark.high
-# def test_chat_history_load_old_conversation(page):
-    
-#     # 대화 목록에서 첫 번째 대화 클릭
-#     conversation_item = page.wait_for_element((By.CSS_SELECTOR, ".MuiListItem-root"))
-#     conversation_item.click()
-
-#     # 대화 기록 화면에서 최근 메시지 로드 대기
-#     chat_content = WebDriverWait(page, 10).until(
-#         EC.visibility_of_element_located(
-#             (By.CSS_SELECTOR, ".message-content [role='article']")
-#         )
-#     )
-
-#     # 메시지가 보이는지 확인, 안보이면 스크린샷
-#     if not chat_content.is_displayed():
-#         page.take_screenshot("CHAT-HIS-007_error.png")
-
-# # ----------------------- CHAT-HIS-009 -----------------------
 # @pytest.mark.function
 # @pytest.mark.medium
 # def test_chat_history_rename(page):
@@ -244,7 +255,7 @@ def test_chat_history_menu_open(login, driver):
 #     if updated_title != "새 제목":
 #         page.take_screenshot("CHAT-HIS-009_error.png")
 
-# # ----------------------- CHAT-HIS-010 -----------------------
+# # ----------------------- CHAT-HIS-008 -----------------------
 # @pytest.mark.function
 # @pytest.mark.medium
 # def test_chat_history_search_dynamic_keyword(page):
@@ -273,7 +284,7 @@ def test_chat_history_menu_open(login, driver):
 #     first_result_text = results[0].get_text()
 #     assert search_keyword in first_result_text, f"검색 결과 '{first_result_text}'가 '{search_keyword}'와 일치하지 않음"
 
-# # ----------------------- CHAT-HIS-008 -----------------------
+# # ----------------------- CHAT-HIS-009 -----------------------
 # @pytest.mark.function
 # @pytest.mark.high
 # def test_chat_history_delete(page):
@@ -301,7 +312,7 @@ def test_chat_history_menu_open(login, driver):
 #     new_first_text = items[0].get_text()
 #     assert new_first_text != first_item_text, f"삭제 실패: '{first_item_text}'가 여전히 목록에 있음"
 
-# #----------------------- CHAT-HIS-11 -----------------------
+# #----------------------- CHAT-HIS-10 -----------------------
 # @pytest.mark.ui
 # @pytest.mark.low
 
