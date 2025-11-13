@@ -101,7 +101,7 @@ def login(driver):
     
     사용법:
         driver = login()           # .env의 MY_ADMIN_ACCOUNT 사용
-        driver = login(ADMIN2)     # 특정 계정 지정 (거의 안 씀)
+        driver = login(ADMIN2)     # 특정 계정 지정
     """
     def _login(account=None):
         # 1. 계정 선택
