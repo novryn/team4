@@ -17,7 +17,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
-from pages.base_page import BasePage  
+from pages.base_page import BasePage
+from src.config.settings import get_default_admin
 
 ARTIFACT_DIR = os.getenv("ARTIFACT_DIR", "artifacts")  # 저장 폴더
 CAPTURE_ON_XFAIL = os.getenv("CAPTURE_ON_XFAIL", "0") == "1"  # XFAIL도 캡처할지
@@ -50,7 +51,7 @@ def _capture(driver, nodeid: str, tag: str = "fail"):
     print(f"[artifact] {html}")
 
 
-@pytest.fixture(scope="session") # 11/13 황지애. chrome_options, chrome_driver_path 추가. driver 수정
+@pytest.fixture(scope="session") # 11/13 황지애. chrome_options, chrome_driver_path 추가. driver, login 수정
 def chrome_options():
     """Chrome 옵션을 세션당 한 번만 생성"""
     opts = Options()
@@ -95,36 +96,61 @@ def driver(chrome_driver_path):
 
 @pytest.fixture
 def login(driver):
-    def _login(username, password):
-        # 1) 로그인 페이지 먼저 오픈 (출처 확보)
+    """
+    로그인 fixture
+    
+    사용법:
+        driver = login()           # .env의 MY_ADMIN_ACCOUNT 사용
+        driver = login(ADMIN2)     # 특정 계정 지정
+    """
+    def _login(account=None):
+        # 1. 계정 선택
+        acc = account or get_default_admin()
+        
+        # 2. 계정 정보 확인
+        if not acc.username or not acc.password:
+            raise ValueError(f"계정 정보가 .env에 없습니다: {acc}")
+        
+        print(f"\n[로그인] {acc.description} ({acc.username})")
+        
+        # 3. 로그인 페이지 이동
         driver.get(
             "https://accounts.elice.io/accounts/signin/me"
             "?continue_to=https%3A%2F%2Fqaproject.elice.io%2Fai-helpy-chat"
         )
-
-        # 2) 쿠키/스토리지 정리 (같은 출처 컨텍스트에서)
+        
+        # 4. 쿠키/스토리지 정리
         driver.delete_all_cookies()
         try:
             driver.execute_script("window.localStorage.clear();")
             driver.execute_script("window.sessionStorage.clear();")
         except Exception:
-            # 스토리지가 막혀있으면 무시하고 진행
             pass
-
-        # 3) 필드 대기 후 입력
+        
+        # 5. 로그인 필드 대기
         WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, "input[autocomplete='username'], input[type='email']"))
+            EC.visibility_of_element_located(
+                (By.CSS_SELECTOR, "input[autocomplete='username'], input[type='email']")
+            )
         )
+        
+        # 6. 아이디/비밀번호 입력
         id_input = driver.find_element(By.CSS_SELECTOR, "input[autocomplete='username'], input[type='email']")
         pw_input = driver.find_element(By.CSS_SELECTOR, "input[type='password']")
-
-        id_input.clear(); pw_input.clear()
-        id_input.send_keys(username)
-        pw_input.send_keys(password)
-
+        
+        id_input.clear()
+        pw_input.clear()
+        id_input.send_keys(acc.username)
+        pw_input.send_keys(acc.password)
+        
+        # 7. 로그인 버튼 클릭
         driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+        
+        # 8. 로그인 완료 대기
         WebDriverWait(driver, 30).until(EC.url_contains("/ai-helpy-chat"))
+        
         return driver
+    
     return _login
 
 # ------- 실패 아티팩트 공통 훅 ----------------------------------
