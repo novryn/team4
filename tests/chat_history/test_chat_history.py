@@ -14,10 +14,9 @@ from pages.base_page import BasePage  # 공통 기능 상속용
 @pytest.mark.ui
 
 def test_chat_history_area_exists(driver, login):
-
-    # env 기반 자동 로그인(.env 파일 읽기)
-    load_dotenv()
-    driver = login()  
+    
+    # env 기반 자동 로그인
+    driver = login()
 
     try:
         # 영역 존재 여부만 확인 (대화 기록이 없는 경우도 있으니 표시 여부는 무시)
