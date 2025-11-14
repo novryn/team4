@@ -1,11 +1,17 @@
+# ───────────────────────────────────────────────────────────────
+# 1. 기본 라이브러리
+# ───────────────────────────────────────────────────────────────
 import os
 from dotenv import load_dotenv
 load_dotenv()  # env 파일 전체를 미리 읽어서 login()에서 사용 가능하게 함
 
 import re
-import pytest
 from datetime import datetime
 
+# ───────────────────────────────────────────────────────────────
+# 2. 외부 라이브러리
+# ───────────────────────────────────────────────────────────────
+import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -13,17 +19,24 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import WebDriverException
-
 from webdriver_manager.chrome import ChromeDriverManager
 
+# ───────────────────────────────────────────────────────────────
+# 3. 내부 프로젝트 모듈
+# ───────────────────────────────────────────────────────────────
 from src.pages.base_page import BasePage
 from src.config.settings import get_default_admin
 
-# 환경변수 기반 아티팩트 설정
+# ───────────────────────────────────────────────────────────────
+# 4. 환경변수 기반 아티팩트 설정
+# ───────────────────────────────────────────────────────────────
 ARTIFACT_DIR = os.getenv("ARTIFACT_DIR", "artifacts")  # 저장 폴더
 CAPTURE_ON_XFAIL = os.getenv("CAPTURE_ON_XFAIL", "0") == "1"  # XFAIL도 캡처할지
 
-# 유틸 함수
+# ───────────────────────────────────────────────────────────────
+# 5. 유틸 함수 (11/13 황지애. chrome_options, chrome_driver_path 추가. driver, login 수정)
+# ───────────────────────────────────────────────────────────────
+
 def _safe_name(nodeid: str) -> str:
     name = re.sub(r"[\\/:*?\"<>|]+", "_", nodeid)
     name = name.replace("::", "_").replace("/", "_").replace("[", "_").replace("]", "_")
@@ -50,12 +63,12 @@ def _capture(driver, nodeid: str, tag: str = "fail"):
     # 참고용 경로 출력
     print(f"[artifact] {png}")
     print(f"[artifact] {html}")
-    
-# 11/13 황지애. chrome_options, chrome_driver_path 추가. driver, login 수정
-# Chrome 설정
-@pytest.fixture(scope="session") 
 
-# Chrome 옵션을 세션당 한 번만 생성
+# ───────────────────────────────────────────────────────────────
+# 6. Chrome 설정(브라우저 옵션 fixture) - Chrome 옵션을 세션당 한 번만 생성
+# ───────────────────────────────────────────────────────────────
+
+@pytest.fixture(scope="session")
 def chrome_options():
     opts = Options()
     if os.getenv("HEADLESS", "0") == "1":
@@ -66,15 +79,23 @@ def chrome_options():
     opts.add_argument("--disable-dev-shm-usage")
     return opts
 
-# ChromeDriver 경로를 세션당 한 번만 설정
+# ───────────────────────────────────────────────────────────────
+# 7. 크롬 드라이버 경로 (webdriver-manager
+# ───────────────────────────────────────────────────────────────
+
 @pytest.fixture(scope="session")
 def chrome_driver_path():
     path = ChromeDriverManager().install()
     print(f"\n[Setup] ChromeDriver 경로: {path}")
     return path
 
+# ───────────────────────────────────────────────────────────────
+# 8. driver fixture (function scope)
+# ───────────────────────────────────────────────────────────────
+
 @pytest.fixture
 def driver(chrome_driver_path):
+    
     # 각 테스트마다 새 브라우저 인스턴스 생성
     opts = Options()
     
@@ -97,6 +118,9 @@ def driver(chrome_driver_path):
     # 테스트 종료 후 브라우저 닫기
     browser.quit()
 
+# ───────────────────────────────────────────────────────────────
+# 9. 언어 설정 함수
+# ───────────────────────────────────────────────────────────────
 
 def _set_language_korean(driver):
     """
@@ -132,6 +156,9 @@ def _set_language_korean(driver):
         print(f"⚠️ 언어 설정 실패: {e}")
         return False
 
+# ───────────────────────────────────────────────────────────────
+# 10. login fixture
+# ───────────────────────────────────────────────────────────────
 
 @pytest.fixture
 def login(driver):
@@ -188,18 +215,22 @@ def login(driver):
 
     return _login
 
-# ---------------- 실패 아티팩트 공통 훅 ----------------
+# ───────────────────────────────────────────────────────────────
+# 11. 실패 아티팩트 공통 훅 (테스트 결과 캡처) - 각 테스트 단계(setup/call/teardown) 리포트를 node에 붙여줌
+# ───────────────────────────────────────────────────────────────
 
-# 각 테스트 단계(setup/call/teardown) 리포트를 node에 붙여줌
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
     setattr(item, "rep_" + rep.when, rep)
     
-# ==== XFAIL 캡처 스위치 ===========================================================
-CAPTURE_XFAIL = False  # ← 여기만 True/False로 켜고 끄면 됨. True로 바꾸면 xfail도 캡처
-# ================================================================================
+# XFAIL 캡처 스위치 ← 여기만 True/False로 켜고 끄면 됨. True로 바꾸면 xfail도 캡처
+CAPTURE_XFAIL = False
+
+# ───────────────────────────────────────────────────────────────
+# 12. auto screenshot fixture (테스트 실패 시 자동 캡처)
+# ───────────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
 def _auto_artifacts_on_fail(request, driver):
@@ -222,9 +253,13 @@ def _auto_artifacts_on_fail(request, driver):
     if CAPTURE_XFAIL and rep_call and rep_call.skipped and "xfail" in rep_call.keywords:
         _capture(driver, nodeid, tag="xfail")
 
-# 모든 테스트에서 BasePage 객체 재사용(11/10 김은아. 해당 기능 추가)
+# ───────────────────────────────────────────────────────────────
+# 13. Page Object 주입 fixture (11/10 김은아. 해당 기능 추가)
+# ───────────────────────────────────────────────────────────────
+
 @pytest.fixture
 def page(driver):
     return BasePage(driver)
 
-# 11/13 작성 코드 정렬 정리 (김은아)
+
+# 11/13, 11/14 코드 로직 순서 및 정렬 정리. 김은아
