@@ -150,11 +150,10 @@ def _set_language_korean(driver):
         )
         
         print("✅ 한국어 설정 완료")
-        return True
-        
+                
     except Exception as e:
         print(f"⚠️ 언어 설정 실패: {e}")
-        return False
+        
 
 # ───────────────────────────────────────────────────────────────
 # 10. login fixture
