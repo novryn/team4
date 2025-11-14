@@ -84,4 +84,35 @@ class BasePage:
         self.driver.switch_to.default_content()
         return element
         
-        #11/10 김은아 작성
+        # 11/10 김은아 작성
+
+    def get_chat_list(self):
+        
+        # 사이드바의 채팅 히스토리 목록 강제 로드 + chat_items 반환
+
+        # 대화 목록 전체 컨테이너 대기
+        container = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]')
+            )
+        )
+
+        # 강제 스크롤 → 가상 리스트 DOM 렌더링
+        self.driver.execute_script(
+            "arguments[0].scrollTop = arguments[0].scrollHeight", container
+        )
+
+        # DOM에 a 태그(대화 항목)가 렌더링될 때까지 대기
+        chat_items = WebDriverWait(self.driver, 10).until(
+            lambda d: container.find_elements(By.TAG_NAME, "a")
+            if len(container.find_elements(By.TAG_NAME, "a")) > 0
+            else False
+        )
+
+        # 존재 확인
+        assert len(chat_items) > 0, "대화 항목이 존재하지 않습니다."
+        print(f"[BasePage] 대화 목록이 {len(chat_items)}개 있습니다.")
+
+        return chat_items
+    
+    # 11/14 김은아 추가 작성
