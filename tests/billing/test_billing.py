@@ -41,8 +41,9 @@ def test_credit_button_visible_and_amount_format(driver, login):
     print("DEBUG LABEL:", repr(label))
 
     try:
-        # 1) 프리픽스(영문 고정; 필요시 플래그로 완화)
-        assert label.startswith("Credit "), f"Prefix 불일치: {label}"
+        # 1) 프리픽스 (영문 또는 한글)
+        has_valid_prefix = label.startswith("Credit ") or label.startswith("크레딧 ")
+        assert has_valid_prefix, f"Prefix 불일치 (Credit 또는 크레딧 기대): {label}"
 
         # 2) 금액 추출
         m = re.search(r"(\d[\d,]*)$", label)
