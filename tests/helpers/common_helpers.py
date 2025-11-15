@@ -125,3 +125,34 @@ def _set_language_korean(driver):
     except Exception as e:
         print(f"⚠️ 언어 설정 실패: {e}")
         return False
+    
+
+def _account_mgmt_page_open(driver):
+    wait = WebDriverWait(driver, 15)
+
+    # 계정 관리 버튼 클릭
+    account_mgmt = wait.until(EC.element_to_be_clickable((
+        By.XPATH,
+        "//*[contains(text(), '계정 관리') or contains(text(), 'Account Management')]"
+    )))
+    account_mgmt.click()
+    print("✅ 계정 관리 클릭")
+
+    # 새 탭 전환
+    driver.switch_to.window(driver.window_handles[-1])
+    print("✅ 새 탭으로 전환")
+
+    # 페이지 로드 대기
+    wait.until(EC.url_contains("members/account"))
+    WebDriverWait(driver, 5).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+    print(f"✅ 계정 관리 페이지 로드: {driver.current_url}")
+
+    # 한국어 설정 확인
+    current_url = driver.current_url
+    if "lang=ko" not in current_url:
+        _set_language_korean(driver)
+        wait.until(EC.url_contains("members/account"))
+    else:
+        print("✅ 이미 한국어 설정됨")
