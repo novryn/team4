@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 from src.config.settings import get_default_admin
-from tests.helpers.common_helpers import (_click_profile, _logout, _set_language_korean, 
+from tests.helpers.common_helpers import (_click_profile, _logout, _set_language_korean, _account_mgmt_page_open,
 )
 
 # AC-003: 이미 가입된 이메일로 회원가입 차단
@@ -462,6 +462,9 @@ def test_profile_dropdown_menu_items(driver, login):
     print(f"  - 메뉴 항목: {list(found_items.keys())}")
 
 
+# AC-018
+
+
 # AC-020
 def test_account_deletion_button_activation(driver, login):
     """
@@ -487,35 +490,9 @@ def test_account_deletion_button_activation(driver, login):
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "header, [role='banner']")))
     print("✅ 메인 페이지 진입")
     
-    # 2) 프로필 → 계정 관리
+    # 2) 프로필 → 계정 관리 페이지로 이동
     _click_profile(driver, wait)
-    
-    account_mgmt = wait.until(EC.element_to_be_clickable((
-        By.XPATH,
-        "//*[contains(text(), '계정 관리') or contains(text(), 'Account Management')]"
-    )))
-    account_mgmt.click()
-    print("✅ 계정 관리 클릭")
-    
-    # 새 탭 전환
-    driver.switch_to.window(driver.window_handles[-1])
-    print("✅ 새 탭으로 전환")
-
-    # 🆕 계정 관리 페이지 완전히 로드될 때까지 대기
-    wait.until(EC.url_contains("members/account"))
-    WebDriverWait(driver, 5).until(
-        lambda d: d.execute_script("return document.readyState") == "complete"
-    )
-    print(f"✅ 계정 관리 페이지 로드: {driver.current_url}")
-
-    # 🆕 이미 lang=ko가 있는지 확인
-    current_url = driver.current_url
-    if "lang=ko" not in current_url:
-        _set_language_korean(driver)
-        # 다시 계정 관리 페이지 확인
-        wait.until(EC.url_contains("members/account"))
-    else:
-        print("✅ 이미 한국어 설정됨")
+    _account_mgmt_page_open(driver)
         
     # 3) 계정 탈퇴 섹션으로 스크롤
     delete_section = wait.until(EC.presence_of_element_located((
