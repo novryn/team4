@@ -5,8 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 from src.config.settings import get_default_admin
-from tests.helpers.common_helpers import (_click_profile, _logout, _set_language_korean, _account_mgmt_page_open,
-)
+from tests.helpers.common_helpers import (_click_profile, _logout, _set_language_korean, _account_mgmt_page_open, _click_profile_avatar_edit_button,
+_select_profile_avatar_menu_item, _upload_profile_avatar_image, )
 
 # AC-003: 이미 가입된 이메일로 회원가입 차단
 def test_duplicate_email_registration_blocked(driver):
@@ -462,7 +462,54 @@ def test_profile_dropdown_menu_items(driver, login):
     print(f"  - 메뉴 항목: {list(found_items.keys())}")
 
 
-# AC-018
+# AC-018 
+def test_promotion_notifications_toggle(driver, login):
+    """
+    프로모션 알림 토글 ON/OFF 변경
+    """
+
+    wait = WebDriverWait(driver, 15)
+
+    driver = login()
+
+    # 프로필 → 계정 관리
+    _click_profile(driver, wait)
+    _account_mgmt_page_open(driver)
+
+    # 1) 프로모션 알림 섹션 찾아서 스크롤
+    promo_section = wait.until(
+        EC.visibility_of_element_located(
+            (By.XPATH, "//*[contains(text(), '프로모션 알림')]")
+        )
+    )
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", promo_section)
+    print("✅ 프로모션 알림 섹션 도달")
+
+    # 2) 상태 읽기 (숨겨진 input → presence OK)
+    toggle_input = driver.find_element(By.CSS_SELECTOR, "input[name='marketing']")
+    initial = toggle_input.is_selected()
+    print(f"초기 토글 상태: {initial}")
+
+    # 3) 클릭 (보이는 switchBase 클릭)
+    switch = wait.until(
+        EC.element_to_be_clickable((By.CSS_SELECTOR, ".MuiSwitch-switchBase"))
+    )
+    switch.click()
+    print("토글 클릭 완료")
+
+    # 4) 상태 변경 대기
+    wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "input[name='marketing']").is_selected() != initial)
+
+    final = driver.find_element(By.CSS_SELECTOR, "input[name='marketing']").is_selected()
+    print(f"변경 후 토글 상태: {final}")
+
+    assert final != initial, "토글 상태가 변경되지 않음"
+
+    # 5) 스낵바 확인
+    snackbar = wait.until(EC.visibility_of_element_located((By.ID, "notistack-snackbar")))
+    assert "Saved successfully" in snackbar.text
+
+    print("✅ AC-018 완료")
 
 
 # AC-020
@@ -557,3 +604,45 @@ def test_account_deletion_button_activation(driver, login):
         pytest.fail("탈퇴하기 버튼이 클릭 가능 상태가 아님")
     
     print(f"\n✅ 계정 탈퇴 버튼 활성화 테스트 완료")
+
+
+# AC-021: 프로필 이미지 변경
+def test_profile_avatar_change(driver, login):
+    """
+    프로필 이미지 변경 시 '저장되었습니다.' 스낵바 노출 확인
+    1. 로그인 후 계정 관리 페이지 진입
+    2. 프로필 아바타 편집 버튼 클릭
+    3. 드롭다운에서 '프로필 이미지 변경' 클릭
+    4. 이미지 파일 업로드
+    5. '저장되었습니다.' 스낵바 노출 확인
+    """
+    wait = WebDriverWait(driver, 15)
+
+    # 1) 로그인 + 계정 관리 페이지
+    driver = login()
+    _click_profile(driver, wait)
+    _account_mgmt_page_open(driver)
+
+    # 2) 아바타 편집 메뉴 열기
+    _click_profile_avatar_edit_button(driver, wait)
+
+    # 3) '프로필 이미지 변경' 선택
+    _select_profile_avatar_menu_item(driver, wait, "프로필 이미지 변경")
+
+    # 4) 이미지 파일 업로드
+    _upload_profile_avatar_image(driver, "profile_avatar.jpg")
+
+    # 5) 스낵바 확인 (한글/영문 둘 다 대비)
+    snackbar = wait.until(EC.visibility_of_element_located((
+        By.ID,
+        "notistack-snackbar",
+    )))
+    text = snackbar.text
+    assert ("저장되었습니다" in text) or ("Saved successfully" in text), f"스낵바 문구 불일치: {text}"
+
+    print("✅ 프로필 이미지 변경 후 스낵바 노출 확인 완료")
+
+    # 6) 새로고침
+    driver.refresh()
+    # 계정 관리 페이지 다시 로딩 대기
+    wait.until(EC.url_contains("members/account"))
