@@ -1,6 +1,7 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from pathlib import Path
 import re
 
 
@@ -156,3 +157,56 @@ def _account_mgmt_page_open(driver):
         wait.until(EC.url_contains("members/account"))
     else:
         print("✅ 이미 한국어 설정됨")
+
+
+def _click_profile_avatar_edit_button(driver, wait):
+    btn = wait.until(EC.element_to_be_clickable((
+        By.CSS_SELECTOR, "svg[data-icon='pen-to-square']"
+    )))
+    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn)
+    btn.click()
+    print("✅ 계정 관리 편집 버튼 클릭")
+
+
+def _upload_profile_avatar_image(driver, filename: str = "profile_avatar.jpg"):
+    """
+    프로필 아바타 이미지 업로드 헬퍼
+    - 현재 파일(common_helpers.py)의 위치를 기준으로 프로젝트 루트(team4)를 찾고,
+      그 아래 src/resources/filename 경로를 사용한다.
+    - 로컬/도커/젠킨스 어디서나 같은 폴더 구조면 동작하도록 설계.
+    """
+    # 1) 현재 파일 위치 기준으로 프로젝트 루트(team4) 찾기
+    here = Path(__file__).resolve()
+    #   team4/tests/helpers/common_helpers.py   
+    project_root = here.parent.parent.parent
+
+    image_path = project_root / "src" / "resources" / filename
+
+    assert image_path.exists(), f"이미지 없음: {image_path}"
+
+    # 2) 파일 인풋 찾기 (type=file + image accept)
+    file_input = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((
+            By.CSS_SELECTOR,
+            "input[type='file'][accept^='image']"
+        ))
+    )
+
+    # 3) 파일 경로 전달 (send_keys는 str 경로 필요)
+    file_input.send_keys(str(image_path))
+    print(f"✅ 프로필 이미지 업로드: {image_path}")
+
+
+
+def _select_profile_avatar_menu_item(driver, wait, text: str):
+    """
+    아바타 편집 드롭다운에서 메뉴 항목 클릭
+    예: '프로필 이미지 변경', '프로필 이미지 제거'
+    """
+    item = wait.until(EC.element_to_be_clickable((
+        By.XPATH,
+        f"//li[.='{text}' or contains(., '{text}')]"
+    )))
+    item.click()
+    print(f"✅ 아바타 메뉴 클릭: {text}")
+
