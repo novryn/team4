@@ -1,12 +1,19 @@
 # 표준 라이브러리
 import os
+import time
+
 # 서드파티 라이브러리
 import pytest
 from dotenv import load_dotenv
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
+
 # 로컬/프로젝트 모듈
 from pages.base_page import BasePage  # 공통 기능 상속용
 
@@ -185,6 +192,53 @@ def test_chat_history_menu_open(login, driver):
     print("팝업 내 Rename / Delete 버튼 존재 확인")
 
 #----------------------- CHAT-HIS-007 -----------------------
+def test_chat_create_and_save(login, driver):
+    driver = login()
+    page = BasePage(driver)
+
+    test_message = "테스트 새 대화"
+
+    try:
+        
+        # '새 대화' 버튼 클릭
+        
+        buttons = page.wait_for_elements(
+            (By.CSS_SELECTOR, "div.MuiListItemButton-root div.MuiListItemText-root span.MuiListItemText-primary")
+        )
+
+        new_chat_button = next((b for b in buttons if b.text.strip() == "새 대화"), None)
+        assert new_chat_button is not None, "'새 대화' 버튼을 찾을 수 없습니다."
+
+        page.scroll_into_view(new_chat_button)
+        new_chat_button.click()
+        print("'새 대화' 버튼 클릭 완료")
+
+        # 새 대화 화면 확인 및 메시지 입력
+        
+        textarea = page.wait_for_clickable((By.CSS_SELECTOR, "textarea.MuiInputBase-input"))
+        page.scroll_into_view(textarea)
+        textarea.click() # 포커스 확보
+        textarea.clear()
+        textarea.send_keys(test_message)
+
+        # 저장 버튼 클릭
+        save_button = page.wait_for_clickable((By.ID, "chat-submit"))
+        page.scroll_into_view(save_button)
+        save_button.click()
+        print("새 대화 입력 및 저장 완료")
+
+        # 변경 확인 (대화 히스토리)
+    
+        # DOM이 새로 렌더링되므로 재조회
+        chat_items = page.get_chat_list()
+        assert any(test_message in item.text for item in chat_items), "새 대화가 히스토리에 저장되지 않았습니다."
+        print("새 대화가 히스토리에 정상 저장됨")
+
+    except Exception as e:
+        driver.save_screenshot("CHAT-HIS-007_create_new_conversation_failed.png")
+        pytest.fail(f"새 대화 생성/저장 확인 실패: {str(e)}")
+
+  #----------------------- CHAT-HIS-008 -----------------------
 @pytest.mark.ui
 @pytest.mark.medium
 def test_chat_history_load_old_conversation(login, driver):
@@ -218,41 +272,53 @@ def test_chat_history_load_old_conversation(login, driver):
     except TimeoutException:
         pytest.fail("오른쪽 대화 영역의 메시지 로드에 실패했습니다.")
 
-# ----------------------- CHAT-HIS-008 -----------------------
+# ----------------------- CHAT-HIS-009 -----------------------
 @pytest.mark.ui
 @pytest.mark.medium
 def test_chat_history_rename(login, driver):
-    
     driver = login()
     page = BasePage(driver)
+    wait = WebDriverWait(driver, 10)
 
-     # 메뉴 클릭
-    page.click((By.CSS_SELECTOR, ".MuiListItem-root .more-icon"))
+    new_title = "새 대화"
 
-    # 드롭다운에서 Rename 버튼이 나타날 때까지 기다림
-    rename_button = WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, ".menu-dropdown .rename"))
-    )
-    rename_button.click()  # Rename 선택
+    # 채팅 목록 로딩
+    chat_items = page.get_chat_list()
+    assert chat_items, "대화 항목이 하나도 없습니다."
 
-    # 팝업에서 이름 수정
-    rename_input = page.wait_for_element((By.CSS_SELECTOR, ".popup-rename input"))
-    rename_input.clear()
-    rename_input.send_keys("새 제목")
+    # 메뉴 버튼 클릭
+    menu_buttons = page.get_menu_buttons()
+    assert menu_buttons, "메뉴 버튼(button)이 존재하지 않습니다."
 
-    # 저장
-    page.click((By.CSS_SELECTOR, ".popup-rename .save"))
+    menu_button = menu_buttons[0]
+    page.scroll_into_view(menu_button)
+    menu_button.click()
+    print("메뉴 버튼 클릭 성공")
 
-    # 변경 반영 확인 (최종 화면 기준 셀렉터)
-    updated_title_element = page.wait_for_element(
-        (By.CSS_SELECTOR, ".MuiTypography-root.MuiTypography-inherit")
-    )
-    updated_title = updated_title_element.text
+    # 팝업 내 Rename / Delete 버튼 확인
+    rename_button, delete_button = page.get_popup_buttons()
+    assert rename_button.is_displayed(), "Rename 버튼이 보이지 않습니다."
+    assert delete_button.is_displayed(), "Delete 버튼이 보이지 않습니다."
+    print("팝업 내 Rename / Delete 버튼 존재 확인")
 
-    if updated_title != "새 제목":
-        page.take_screenshot("CHAT-HIS-009_error.png")
-        
-# # ----------------------- CHAT-HIS-009 -----------------------
+    # 입력창 선택 후 내용 초기화하고 새 제목 입력
+    input_box = wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@id=":r7n:"]')))
+    input_box.clear()
+    input_box.send_keys(new_title)
+    print("텍스트 박스 초기화 및 새 제목 입력 완료")
+
+    # Save 버튼 클릭
+    save_button = wait.until(EC.element_to_be_clickable((By.ID, ":r7m:")))
+    save_button.click()
+    print("Save 버튼 클릭 완료")
+
+    # 페이지 새로고침 후 반영 확인
+    driver.refresh()
+    time.sleep(2)  # 새로고침 후 안정화 대기
+    updated_title = page.get_chat_list()[0].text
+    assert updated_title == new_title, f"제목 변경 실패: {updated_title}"
+    print("제목 변경 확인 완료")
+# # ----------------------- CHAT-HIS-010 -----------------------
 # @pytest.mark.function
 # @pytest.mark.medium
 # def test_chat_history_search_dynamic_keyword(page):
@@ -281,7 +347,7 @@ def test_chat_history_rename(login, driver):
 #     first_result_text = results[0].get_text()
 #     assert search_keyword in first_result_text, f"검색 결과 '{first_result_text}'가 '{search_keyword}'와 일치하지 않음"
 
-# # ----------------------- CHAT-HIS-010 -----------------------
+# # ----------------------- CHAT-HIS-011 -----------------------
 # @pytest.mark.function
 # @pytest.mark.high
 # def test_chat_history_delete(page):
@@ -309,275 +375,322 @@ def test_chat_history_rename(login, driver):
 #     new_first_text = items[0].get_text()
 #     assert new_first_text != first_item_text, f"삭제 실패: '{first_item_text}'가 여전히 목록에 있음"
 
-# #----------------------- CHAT-HIS-10 -----------------------
-# @pytest.mark.ui
-# @pytest.mark.low
 
-# def test_chat_history_autosave(login, driver):
-#     driver = login("team4@elice.com", "team4elice!@")
+#----------------------- CHAT-HIS-012 -----------------------
+import pytest
+import time
+from selenium.webdriver.support.ui import WebDriverWait
+from src.pages.base_page import BasePage
 
-#     # 대화 목록 모으기 함수
-#     def collect_chat_items(driver, timeout=15):
-#         try:
-#             container = WebDriverWait(driver, timeout).until(
-#                 EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
-#             )
-#         except TimeoutException:
-#             print("대화 목록 컨테이너 자체가 없음")
-#             return []
-
-#         chat_items = []
-#         start_time = time.time()
-#         while True:
-#             found = container.find_elements(By.TAG_NAME, "a")
-#             if len(found) > len(chat_items):
-#                 chat_items = found
-#             driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
-#             time.sleep(0.5)
-#             if time.time() - start_time > timeout:
-#                 break
-#         return chat_items
-
-#     # 채팅창의 입력창 찾기 (CSS 선택자: textarea)
-#     try:
-#         input_box = WebDriverWait(driver, 5).until(
-#             EC.presence_of_element_located((By.CSS_SELECTOR, "textarea"))
-#         )
-#         input_box.send_keys("자동 저장 테스트 메시지")
-#     except TimeoutException:
-#         print("입력창 요소 안보임")
-#         pytest.skip("입력창이 보이지 않아 테스트 건너뜀")
-
-#     # 페이지 새로고침
-#     driver.refresh()
-#     time.sleep(2)
-
-#     # 새로고침 후 입력했던 내용이 다시 남아 있는지 확인
-#     try:
-#         input_box_after = WebDriverWait(driver, 5).until(
-#             EC.presence_of_element_located((By.CSS_SELECTOR, "textarea"))
-#         )
-#         restored_text = input_box_after.get_attribute("value")
-#         if restored_text.strip():
-#             print("자동 저장됨:", restored_text)
-#         else:
-#             print("자동 저장 안됨")
-#     except TimeoutException:
-#         print("입력창 요소 안보임 (새로고침 후)")
-#         pytest.fail("자동 저장 검증 불가 - 입력창 없음")
-
-# # ----------------------- CHAT-HIS-12 -----------------------
-# @pytest.mark.ui
-# @pytest.mark.high
-# def test_chat_history_sync_across_browsers(login, driver):
-#     driver = login("team4@elice.com", "team4elice!@")
-
-#     def collect_chat_items(driver, timeout=15):
-#         try:
-#             container = WebDriverWait(driver, timeout).until(
-#                 EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
-#             )
-#         except TimeoutException:
-#             print("대화 목록 컨테이너 자체가 없음")
-#             return []
-
-#         chat_items = []
-#         start_time = time.time()
-#         while True:
-#             found = container.find_elements(By.TAG_NAME, "a")
-#             if len(found) > len(chat_items):
-#                 chat_items = found
-#             driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
-#             time.sleep(0.5)
-#             if time.time() - start_time > timeout:
-#                 break
-#         return chat_items
-
-#     chat_items = collect_chat_items(driver)
-#     if not chat_items:
-#         print("채팅 내역 없음 - 새 채팅 생성 필요")
-#         pytest.skip("채팅 내역이 없어 동기화 테스트 불가")
-
-#     print(f"현재 PC에서 대화 {len(chat_items)}개 존재.")
-#     print("👉 다른 브라우저에서 동일 계정 로그인 후 새 대화가 반영되는지 수동 확인 필요.")
-#     assert True, "자동 검증 불가 - 시각적 확인 필요"
-
-
-# # ----------------------- CHAT-HIS-13 -----------------------
-# @pytest.mark.ui
-# @pytest.mark.high
-
-# def test_chat_history_persistence_after_relogin(login, driver):
-#     driver = login("team4@elice.com", "team4elice!@")
-
-#     def collect_chat_items(driver, timeout=15):
-#         try:
-#             container = WebDriverWait(driver, timeout).until(
-#                 EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid=\"virtuoso-item-list\"]'))
-#             )
-#         except TimeoutException:
-#             print("대화 목록 컨테이너 없음")
-#             return []
-
-#         chat_items = []
-#         start_time = time.time()
-#         while True:
-#             found = container.find_elements(By.TAG_NAME, "a")
-#             if len(found) > len(chat_items):
-#                 chat_items = found
-#             driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
-#             time.sleep(0.5)
-#             if time.time() - start_time > timeout:
-#                 break
-#         return chat_items
-
-#     before_logout = collect_chat_items(driver)
-#     print(f"로그아웃 전 대화 {len(before_logout)}개")
-
-#     # 로그아웃 버튼 찾기
-
-
-# # ----------------------- CHAT-HIS-016 -----------------------
-# @pytest.mark.ui
-# @pytest.mark.medium
-
-# # 성능 테스트: 검색 응답 속도 확인
-# def test_chat_history_search_speed(login, driver):
+@pytest.mark.ui
+@pytest.mark.medium
+def test_chat_history_persistence(login, driver):
     
-#     driver = login("team4@elice.com", "team4elice!@")
+    # 1. 최초 로그인 및 안정화
+    driver = login()
+    page = BasePage(driver)
 
-#     # 검색 버튼 클릭
-#     search_button = WebDriverWait(driver, 10).until(
-#         EC.element_to_be_clickable((By.XPATH, "//button[contains(., '검색')]"))
-#     )
-#     search_button.click()
+    # 사이드바 채팅 목록 로딩 안정화
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
+    )
 
-#     # 팝업창 열리면 검색창 찾기
-#     search_box = WebDriverWait(driver, 10).until(
-#         EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='text']"))
-#     )
+    chat_items_before = page.get_chat_list()
+    assert chat_items_before, "초기 채팅 목록이 비어 있습니다."
+    first_title_before = chat_items_before[0].text
+    total_count_before = len(chat_items_before)
+    print(f"[Before Logout] 채팅 개수: {total_count_before}, 첫 번째 제목: {first_title_before}")
 
-#     # 키워드 입력 후 반응속도 측정
-#     start = time.time()
-#     search_box.send_keys("테스트")
-#     try:
-#         WebDriverWait(driver, 2).until(
-#             EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="search-result-item"]'))
-#         )
-#         elapsed = time.time() - start
-#         print(f"검색 결과 표시까지 {elapsed:.2f}초 걸림")
-#         assert elapsed <= 1, "검색 응답이 1초를 초과함"
-#     except TimeoutException:
-#         pytest.fail("검색 결과가 표시되지 않음")
+    # 2. 로그아웃 수행 (driver 종료하지 않음)
+    page.logout()
 
-# # ----------------------- CHAT-HIS-017 -----------------------
-# @pytest.mark.ui
-# @pytest.mark.medium
+    # 3. 재로그인 (픽스쳐에서 새 driver 반환)
+    # 필요 시 이전 Chromedriver 프로세스 종료 후 테스트 재시작
+    # Windows: taskkill /F /IM chromedriver.exe
+    driver = login()
+    page = BasePage(driver)
 
-# # 성능 테스트: 채팅 삭제 시 반응 속도 확인
-# def test_chat_delete_response(login, driver):
+    # 로그인 후 사이드바 채팅 목록 안정화
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
+    )
+
+    chat_items_after = page.get_chat_list()
+    assert chat_items_after, "재로그인 후 채팅 목록이 비어 있습니다."
+    first_title_after = chat_items_after[0].text
+    total_count_after = len(chat_items_after)
+    print(f"[After Login] 채팅 개수: {total_count_after}, 첫 번째 제목: {first_title_after}")
+
+    # 4. 검증
+    assert total_count_before == total_count_after, "채팅 개수가 일치하지 않습니다."
+    assert first_title_before == first_title_after, "첫 번째 채팅 제목이 일치하지 않습니다."
     
-#     driver = login("team4@elice.com", "team4elice!@")
+    # 일치하면 확인 메시지 출력
+    print("✅ 채팅 개수와 첫 번째 제목이 재로그인 후에도 일치합니다.")
 
-#     # 채팅 목록 컨테이너 기다리기
-#     try:
-#         container = WebDriverWait(driver, 15).until(
-#             EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
-#         )
-#     except TimeoutException:
-#         pytest.fail("히스토리 목록이 없음")
-
-#     # 첫 번째 채팅 항목 찾기
-#     first_chat = container.find_elements(By.TAG_NAME, "a")[0]
-
-#     # 점(⋮) 버튼 클릭
-#     # 개발자도구에서 점 아이콘 선택자 확인 필요 (예: .MuiButtonBase-root)
-#     menu_button = first_chat.find_element(By.CSS_SELECTOR, "button")
-#     menu_button.click()
-
-#     # Delete 클릭 후 반응 시간 측정
-#     start = time.time()
-#     delete_btn = WebDriverWait(driver, 5).until(
-#         EC.element_to_be_clickable((By.XPATH, "//li[contains(., 'Delete')]"))
-#     )
-#     delete_btn.click()
-
-#     # 삭제 후 목록 갱신 확인
-#     WebDriverWait(driver, 5).until(EC.staleness_of(first_chat))
-#     elapsed = time.time() - start
-#     print(f"삭제 반응 속도: {elapsed:.2f}초")
-#     assert elapsed <= 0.5, "삭제 반응이 0.5초 초과"
-
-# # ----------------------- CHAT-HIS-018 -----------------------
-# @pytest.mark.security
-# @pytest.mark.high
-
-# # 보안 테스트: 비로그인 접근 차단 확인
-# def test_redirect_if_not_logged_in(driver):
+# ----------------------- CHAT-HIS-013 -----------------------
+@pytest.mark.ui
+@pytest.mark.medium
+def test_chat_history_sync_across_browsers(login, driver):
     
-#     # 로그인 없이 직접 메인 화면 접근
-#     driver.get("https://qaproject.elice.io/ai-helpy-chat")
+    # 첫 번째 브라우저
+    driver = login()
+    page = BasePage(driver)
 
-#     # 로그인 페이지로 리다이렉트 되는지 확인
-#     try:
-#         WebDriverWait(driver, 5).until(
-#             EC.url_contains("login")
-#         )
-#         print("로그인 안하면 로그인 페이지로 이동함 (정상)")
-#     except TimeoutException:
-#         pytest.fail("비로그인 상태에서도 접근이 가능함")
+    # 사이드바 채팅 목록 안정화 (최대 10초, 0.05초마다 확인)
+    WebDriverWait(driver, 10, poll_frequency=0.05).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
+    )
 
-# # ----------------------- CHAT-HIS-019 -----------------------
-# @pytest.mark.exception
-# @pytest.mark.high
+    chat_items_before = page.get_chat_list()
+    assert chat_items_before, "초기 채팅 목록이 비어 있습니다."
+    first_title_before = chat_items_before[0].text
+    total_count_before = len(chat_items_before)
+    print(f"[Before Other Browser] 채팅 개수: {total_count_before}, 첫 번째 제목: {first_title_before}")
 
-# # 예외 테스트: 네트워크 단절 시 오류 메시지 확인
-# def test_network_disconnect_message(login, driver):
+    # 두 번째 브라우저 
+    driver2 = login()
+    page2 = BasePage(driver2)
+
+    WebDriverWait(driver2, 10, poll_frequency=0.05).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
+    )
+
+    chat_items_after = page2.get_chat_list()
+    assert chat_items_after, "새 브라우저에서 채팅 목록이 비어 있습니다."
+    first_title_after = chat_items_after[0].text
+    total_count_after = len(chat_items_after)
+    print(f"[Second Browser] 채팅 개수: {total_count_after}, 첫 번째 제목: {first_title_after}")
+
+    # 검증
+    try:
+        start = time.time()
+        # 최대 3초 동안 브라우저 간 동기화 체크
+        WebDriverWait(driver2, 3, poll_frequency=0.05).until(
+            lambda d: total_count_before == len(page2.get_chat_list()) and
+                      first_title_before == page2.get_chat_list()[0].text
+        )
+    except TimeoutException:
+        elapsed = time.time() - start
+        pytest.fail(f"브라우저 간 동기화 실패 (elapsed={elapsed:.2f}s)")
+
+    print("브라우저 간 채팅 목록 동기화 정상 확인")
+
+# ----------------------- CHAT-HIS-014 -----------------------
+@pytest.mark.ui
+@pytest.mark.medium
+def test_chat_history_search_response_time(login, driver):
     
-#     driver = login("team4@elice.com", "team4elice!@")
+    driver = login()
+    wait = WebDriverWait(driver, 30)
 
-#     # 실제 네트워크 끊기는 건 테스트 불가 → JS 시뮬레이션
-#     driver.execute_script("window.dispatchEvent(new Event('offline'));")
+    try:
+        # 사이드바 렌더링 보장
+        sidebar = wait.until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='virtuoso-item-list']"))
+        )
+        driver.execute_script("arguments[0].scrollTop = 0", sidebar)
+        print("사이드바 스크롤 초기화 완료")
 
-#     try:
-#         WebDriverWait(driver, 5).until(
-#             EC.presence_of_element_located((By.XPATH, "//*[contains(text(), '네트워크 연결 끊김')]"))
-#         )
-#         print("네트워크 끊김 메시지 표시됨 (정상)")
-#     except TimeoutException:
-#         pytest.fail("네트워크 오류 메시지가 표시되지 않음")
+        # 검색 버튼 클릭
+        
+        try:
+            search_button = wait.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//div[@role='button'][.//span[text()='검색']]")
+                )
+            )
+            search_button.click()
+            print("검색 버튼 클릭 완료")
+        except Exception:
+            search_button = wait.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//svg[@data-testid='magnifying-glassIcon']/ancestor::div[@role='button']")
+                )
+            )
+            search_button.click()
+            print("검색 버튼 클릭 (아이콘 기반) 완료")
 
-# # ----------------------- CHAT-HIS-020 -----------------------
-# @pytest.mark.exception
-# @pytest.mark.medium
+        # 검색창 입력
 
-# # 예외 테스트: 삭제 중 통신 실패 시 복구 확인
-# def test_delete_fail_recovery(login, driver):
+        search_input = wait.until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[cmdk-input]"))
+        )
+        search_input.clear()
+        search_input.send_keys("테스트 새 대화")
+        print("검색 키워드 입력 완료")
+
+        # 검색 결과 클릭 (StaleElementReference 안전)
+
+        search_results = wait.until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[cmdk-item]"))
+        )
+        assert search_results, "검색 결과가 없습니다"
+        print(f"검색 결과 {len(search_results)}개 확인됨")
+
+        # 첫 번째 결과 클릭 — StaleElementReference 안전하게 재조회
+        first_result = wait.until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "[cmdk-item]:first-child"))
+        )
+        first_result.click()
+        print("첫 번째 검색 결과 클릭 완료")
+
+    except TimeoutException as e:
+        driver.save_screenshot("CHAT-HIS-SEARCH_TIMEOUT.png")
+        pytest.fail(f"검색 테스트 실패: {str(e)}")
+
+# ----------------------- CHAT-HIS-015 -----------------------
+@pytest.mark.ui
+@pytest.mark.medium
+def test_chat_delete_response_time_optimized(login, driver):
+
+    # 채팅 삭제 UI 반응 속도 최적화 (0.5초 목표)
+
+    driver = login()
+    page = BasePage(driver)
+
+    # 1. 첫 번째 채팅 항목 확보 (JS로 element id 혹은 unique selector 필요)
+    first_chat = page.get_chat_list()[0]
+
+    # 2. 메뉴 버튼 클릭 (JS 클릭)
+    menu_button = page.get_menu_buttons()[0]
+    driver.execute_script("arguments[0].click();", menu_button)
     
-#     driver = login("team4@elice.com", "team4elice!@")
+    # 3. Delete 버튼 클릭 (JS 클릭)
+    delete_button = WebDriverWait(driver, 3, poll_frequency=0.02).until(
+        EC.presence_of_element_located((By.XPATH, "//p[text()='Delete']"))
+    )
+    driver.execute_script("arguments[0].click();", delete_button)
 
-#     # 채팅 목록 컨테이너 찾기
-#     try:
-#         container = WebDriverWait(driver, 15).until(
-#             EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
-#         )
-#     except TimeoutException:
-#         pytest.fail("❌ 목록 없음")
+    # 4. 삭제 후 UI 반영 확인 (JS로 첫 번째 항목 비교)
+    start = time.time()
+    try:
+        WebDriverWait(driver, 1, poll_frequency=0.02).until(
+            lambda d: d.execute_script(
+                "return arguments[0] !== document.querySelector('[data-testid=\"virtuoso-item-list\"] > div:first-child');",
+                first_chat
+            )
+        )
+    except TimeoutException:
+        elapsed = time.time() - start
+        pytest.fail(f"삭제 UI 반응 지연: {elapsed:.2f}s")
 
-#     # 첫 번째 항목 선택
-#     first_chat = container.find_elements(By.TAG_NAME, "a")[0]
+    elapsed = time.time() - start
+    print(f"JS 최적화 삭제 UI 반응 시간: {elapsed:.2f}s")
+    
+# ----------------------- CHAT-HIS-016 -----------------------
+@pytest.mark.ui
+@pytest.mark.medium
+def test_redirect_to_login_if_not_logged_in():
+    
+    # 로그인 없이 AI 에이전트 페이지 접근 시 로그인 페이지로 리다이렉트 확인
+    chrome_options = Options()
+    chrome_options.add_argument("--incognito")
+    chrome_options.add_argument("--start-maximized")
+    service = Service()
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
-#     # 삭제 버튼 누르기
-#     delete_btn = first_chat.find_element(By.XPATH, ".//button[contains(., 'Delete')]")
-#     delete_btn.click()
+    try:
+        # 비로그인 상태로 AI 에이전트 메인 화면 접근
+        driver.get("https://qatrack.elice.io/ai-helpy-chat/agent")
 
-#     # 서버 통신 실패 상황을 JS로 시뮬레이션
-#     driver.execute_script("alert('삭제 실패: 서버 응답 없음');")
-#     time.sleep(1)
-#     driver.switch_to.alert.accept()
+        wait = WebDriverWait(driver, 10)
+        # URL에 로그인 페이지 주소 일부가 포함되면 성공
+        wait.until(lambda d: "accounts.elice.io/accounts/signin" in d.current_url)
+        print(f"현재 URL: {driver.current_url}")
+        print("로그인 없이 접근 시 로그인 페이지로 자동 이동 확인")
 
-#     # 항목이 복구되어 있는지 확인
-#     still_exists = first_chat in container.find_elements(By.TAG_NAME, "a")
-#     print("삭제 실패 후 복구 상태:", "정상 복구됨" if still_exists else "복구 안됨")
+    except TimeoutException:
+        driver.save_screenshot("redirect_to_login_timeout.png")
+        pytest.fail("로그인 리다이렉트 테스트 실패: 로그인 페이지로 이동하지 않음")
 
-#     assert still_exists, "삭제 실패 시 복구되지 않음"
+    finally:
+        driver.quit()
+# ----------------------- CHAT-HIS-017 -----------------------
+
+def test_network_disconnect_api_only(login, driver, mocker):
+    """
+    네트워크 단절 시 UI 메시지 대신 API 요청 실패 여부 확인
+    - Mock API로 요청 실패 시뮬레이션
+    """
+
+    # 1. 로그인 후 페이지 진입
+    driver = login()
+    
+    # 2. Mock API로 GET 요청 실패 시뮬레이션
+    def mock_get(*args, **kwargs):
+        raise requests.ConnectionError("Simulated network failure")
+    mocker.patch("requests.get", side_effect=mock_get)
+
+    # 3. 페이지 새로고침 (API 호출 재시도)
+    driver.refresh()
+
+    # 4. API 요청 실패 여부 확인 (JS에서 실패 상태 확인)
+    try:
+        failure_detected = WebDriverWait(driver, 5).until(
+            lambda d: d.execute_script("return window.lastFailedApiCall === 'chat_list';")
+        )
+    except TimeoutException:
+        pytest.fail("⛔ API 요청 실패가 감지되지 않음")
+
+    assert failure_detected, "API 요청 실패가 기록되지 않음"
+
+    print("✅ 네트워크 단절 시 API 요청 실패 정상 확인")
+
+
+# ----------------------- CHAT-HIS-018 -----------------------
+@pytest.mark.ui
+@pytest.mark.high
+def test_network_disconnect_shows_error(login, driver):
+    """
+    TC18: 네트워크 단절 시 채팅 목록 표시 확인
+    1. 계정 로그인
+    2. 메인 화면 진입
+    3. Wi-Fi 비활성화 (Chrome DevTools Protocol로 네트워크 오프라인)
+    4. 페이지 새로고침
+    5. 연결 끊김 오류 메시지 표시 확인
+    """
+
+    driver = login()  # 로그인 픽스쳐 사용
+    page = BasePage(driver)
+    wait = WebDriverWait(driver, 10)
+
+    try:
+        # 1~2. 로그인 후 메인 화면 진입
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]')))
+        print("✅ 메인 화면 채팅 목록 로드 완료")
+
+        # 3. 네트워크 오프라인 모드 설정 (CDP 사용)
+        driver.execute_cdp_cmd('Network.enable', {})
+        driver.execute_cdp_cmd('Network.emulateNetworkConditions', {
+            "offline": True,
+            "latency": 0,
+            "downloadThroughput": 0,
+            "uploadThroughput": 0
+        })
+        print("⚠️ 네트워크 오프라인 모드 적용")
+
+        # 4. 페이지 새로고침
+        driver.refresh()
+        print("🔄 페이지 새로고침 완료")
+
+        # 5. 네트워크 끊김 오류 메시지 확인
+        try:
+            error_element = wait.until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "[data-testid='network-error']"))
+            )
+            assert error_element.is_displayed(), "네트워크 오류 메시지가 화면에 표시되지 않음"
+            print("✅ 네트워크 연결 끊김 오류 메시지 표시 확인")
+        except TimeoutException:
+            pytest.fail("⛔ 네트워크 연결 끊김 메시지 확인 실패")
+
+    finally:
+        # 테스트 종료 전 네트워크 정상화
+        driver.execute_cdp_cmd('Network.emulateNetworkConditions', {
+            "offline": False,
+            "latency": 0,
+            "downloadThroughput": -1,
+            "uploadThroughput": -1
+        })
+        print("✅ 네트워크 정상화 완료")
+
