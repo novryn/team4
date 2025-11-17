@@ -6,10 +6,15 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from src.config.settings import get_default_admin
 from tests.helpers.common_helpers import (_click_profile, _set_language_korean, _account_mgmt_page_open, _click_profile_avatar_edit_button,
-_select_profile_avatar_menu_item, _upload_profile_avatar_image, )
+ _upload_profile_avatar_image, _select_profile_avatar_menu, _get_account_mgmt_avatar_srcs,  _get_main_page_avatar_srcs, _get_login_page_avatar_src,
+ )
 
 # BasePage import
 from src.pages.base_page import BasePage
+
+# ======================
+# ✅ test functions
+# ======================
 
 # AC-003: 이미 가입된 이메일로 회원가입 차단
 def test_duplicate_email_registration_blocked(driver):
@@ -611,30 +616,19 @@ def test_account_deletion_button_activation(driver, login):
 
 # AC-021: 프로필 이미지 변경
 def test_profile_avatar_change_applied_all_uis(driver, login):
-    """
-    프로필 이미지 변경 시 '저장되었습니다.' 스낵바 노출 확인
-    1. 로그인 후 계정 관리 페이지 진입
-    2. 프로필 아바타 편집 버튼 클릭
-    3. 드롭다운에서 '프로필 이미지 변경' 클릭
-    4. 이미지 파일 업로드
-    5. '저장되었습니다.' 스낵바 노출 확인
-    (확장) 프로필 이미지 변경 후
-    - 계정 관리 페이지 3곳
-    - 메인 페이지 2곳
-    - 로그아웃 후 로그인 화면 1곳에 동일한 아바타가 적용되는지 확인
-    """
+    
     wait = WebDriverWait(driver, 15)
 
-    # 1) 로그인 + 계정 관리 페이지
+    # 1) 로그인 -> 계정 관리 페이지 진입
     driver = login()
     _click_profile(driver, wait)
     _account_mgmt_page_open(driver)
 
-    # 2) 아바타 편집 메뉴 열기
+    # 2) 프로필 아바타 편집 버튼 클릭
     _click_profile_avatar_edit_button(driver, wait)
 
-    # 3) '프로필 이미지 변경' 선택
-    _select_profile_avatar_menu_item(driver, wait, "프로필 이미지 변경")
+    # 3) 드롭다운에서 '프로필 이미지 변경' 버튼이 클릭 가능한지 확인(윈도우 파일 선택 창이 뜨는 것을 방지)
+    _select_profile_avatar_menu(driver, wait, "프로필 이미지 변경")
 
     # 4) 이미지 파일 업로드
     _upload_profile_avatar_image(driver, "profile_avatar.jpg")
@@ -649,9 +643,92 @@ def test_profile_avatar_change_applied_all_uis(driver, login):
 
     print("✅ 프로필 이미지 변경 후 스낵바 노출 확인 완료")
 
-    # 6) 새로고침
+    # 6) 새로고침 후 렌더링 안정화
+    print("🔍 새로고침 실행")
     driver.refresh()
-    # 계정 관리 페이지 다시 로딩 대기
+
+    print("🔍 url_contains 대기 시작")
     wait.until(EC.url_contains("members/account"))
+    print("✅ url_contains 통과")
+
+    print("🔍 readyState 대기 시작")
+    wait.until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+    print("✅ readyState complete")
+
+    # 7) 계정 관리 페이지 3곳 아바타 src 비교
+    src_left, src_header, src_dropdown = _get_account_mgmt_avatar_srcs(driver, wait)
+
+    account_srcs = {src_left, src_header, src_dropdown}
+
+    assert None not in account_srcs, (
+        f"계정 관리 페이지의 아바타 src 중 None이 있습니다: "
+        f"left={src_left}, header={src_header}, dropdown={src_dropdown}"
+    )
+
+    assert len(account_srcs) == 1, (
+        f"계정 관리 페이지의 아바타 이미지가 서로 다릅니다:\n"
+        f"- left: {src_left}\n"
+        f"- header: {src_header}\n"
+        f"- dropdown: {src_dropdown}"
+    )
+
+    account_src = account_srcs.pop()  # 기준 src
+    print("✅ 계정 관리 페이지 3곳 아바타 src 확인 완료")
+
+    # 8) 메인 페이지 2곳 아바타 비교
+    main_tab_handle = driver.window_handles[0]
+    driver.switch_to.window(main_tab_handle)
+
+    # 렌더링 안정화
+    WebDriverWait(driver, 5).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    src_main_dropdown, src_main_header = _get_main_page_avatar_srcs(driver, wait)
+    main_srcs = {src_main_dropdown, src_main_header}
+
+    assert None not in main_srcs, (
+        f"메인 페이지 아바타 src 중 None이 있습니다: "
+        f"main={src_main_dropdown}, header={src_main_header}"
+    )
+
+    assert len(main_srcs) == 1, (
+        f"메인 페이지 2곳의 아바타 이미지가 서로 다릅니다:\n"
+        f"- main dropdown: {src_main_dropdown}\n"
+        f"- header: {src_main_header}"
+    )
+
+    main_src = main_srcs.pop()
+
+    assert main_src == account_src, (
+        f"메인 페이지 아바타 src가 계정 관리 페이지 src와 다릅니다:\n"
+        f"- 기준 src: {account_src}\n"
+        f"- 메인 페이지 src: {main_src}"
+    )
+
+    print("✅ 메인 페이지 2곳 아바타 src 확인 완료")
+
+    # 9) 로그아웃 후 로그인 페이지 아바타 비교
+    BasePage(driver).logout()
+
+    # 렌더링 안정화
+    print("🔍 로그아웃 후 readyState 대기 시작")
+    wait.until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+    print("✅ 로그아웃 후 readyState complete")
+    
+    login_src = _get_login_page_avatar_src(driver, wait)
+    assert login_src is not None, "로그인 페이지 아바타 src가 None입니다."
+
+    assert login_src == account_src, (
+        f"로그인 페이지 아바타 src가 계정 관리 기준 src와 다릅니다:\n"
+        f"- 기준 src: {account_src}\n"
+        f"- 로그인 페이지 src: {login_src}"
+    )
+
+    print("🎉 모든 페이지에서 프로필 이미지가 정상적으로 반영되었음을 확인했습니다!")
 
 
