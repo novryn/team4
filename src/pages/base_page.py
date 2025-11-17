@@ -23,10 +23,6 @@ class BasePage:
             EC.element_to_be_clickable(locator)
         )
 
-    def click(self, locator):
-        element = self.wait_for_clickable(locator)
-        element.click()
-
     def wait_for_element(self, locator, timeout=30):
         return WebDriverWait(self.driver, timeout).until(
             EC.visibility_of_element_located(locator)
