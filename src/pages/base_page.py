@@ -1,6 +1,7 @@
 # 표준 라이브러리
 import os
 import time
+import pytest
 
 # 서드파티 라이브러리
 from selenium.webdriver.common.by import By
@@ -154,22 +155,44 @@ class BasePage:
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
     
     def logout(self):
-        wait = WebDriverWait(self.driver, 10)
+    
+        wait = WebDriverWait(self.driver, self.timeout)
+    
+        try:
+            # 1) 우상단 프로필 버튼 클릭
+            profile_btn = wait.until(
+                EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, "button.MuiAvatar-root")
+                )
+            )
+            profile_btn.click()
 
-        # 프로필 버튼 클릭
-        profile_btn = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "button.MuiAvatar-root"))
-        )
-        profile_btn.click()
-        print("프로필 버튼 클릭 완료")
+            # 2) 드롭다운에서 'Logout' / '로그아웃' 항목이
+            #    실제로 보이고 클릭 가능해질 때까지 대기
+            logout_btn = wait.until(
+                EC.element_to_be_clickable(
+                    (
+                        By.XPATH,
+                        "//*[contains(text(),'Logout') or contains(text(),'로그아웃')]",
+                    )
+                )
+            )
 
-        # Logout 버튼 클릭 (JS 사용)
-        logout_btn = wait.until(
-            EC.presence_of_element_located((By.XPATH, "//p[text()='Logout']"))
-        )
-        self.driver.execute_script("arguments[0].click();", logout_btn)
-        print("로그아웃 버튼 클릭 완료")
+            # 3) 클릭 시도 (일반 클릭 → 실패 시 JS 클릭)
+            try:
+                logout_btn.click()
+            except Exception:
+                self.driver.execute_script("arguments[0].click();", logout_btn)
+
+            # 4) 로그인/Signin 페이지로 이동했는지 확인
+            wait.until(EC.url_contains("signin"))
+
+        except Exception:
+            # UI 로그아웃 실패 시: 세션은 일단 초기화하고, 테스트는 실패로 처리
+            self.driver.delete_all_cookies()
+            self.driver.refresh()
+            pytest.fail("로그아웃 실패: Logout/로그아웃 버튼을 찾거나 클릭할 수 없습니다.")
         
-    # 11/14 로그아웃 픽스쳐 추가(김은아)    
+    # 11/14 로그아웃 픽스쳐 추가(김은아), 11/17 수정(황지애)  
 
         
