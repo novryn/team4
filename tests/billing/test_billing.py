@@ -9,7 +9,7 @@ from selenium.common.exceptions import MoveTargetOutOfBoundsException
 
 # Common 헬퍼 함수 import
 from tests.helpers.common_helpers import (
-    _click_profile, _logout, _find_payment_history
+    _click_profile, _find_payment_history
 )
 
 # Billing 헬퍼 함수 import
@@ -17,8 +17,11 @@ from tests.helpers.billing_helpers import (
     _dump, _dump_on_fail, _find_credit_btn, _extract_amount, _has_won_symbol,
     _css, _computed_bg, _any_prop_changed, _style_snapshot, PROPS,
     _hover, _hover_strong, _is_in_hover_chain,
-    _click_profile, _logout, debug_wait
+    _click_profile, debug_wait
 )
+
+# BasePage import
+from src.pages.base_page import BasePage
 
 # ======================
 # ✅ test functions

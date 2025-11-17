@@ -5,8 +5,11 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 from src.config.settings import get_default_admin
-from tests.helpers.common_helpers import (_click_profile, _logout, _set_language_korean, _account_mgmt_page_open, _click_profile_avatar_edit_button,
+from tests.helpers.common_helpers import (_click_profile, _set_language_korean, _account_mgmt_page_open, _click_profile_avatar_edit_button,
 _select_profile_avatar_menu_item, _upload_profile_avatar_image, )
+
+# BasePage import
+from src.pages.base_page import BasePage
 
 # AC-003: 이미 가입된 이메일로 회원가입 차단
 def test_duplicate_email_registration_blocked(driver):
@@ -121,7 +124,7 @@ def test_logout_prevents_back_navigation(driver, login):
     print(f"✅ 메인 페이지 진입: {main_page_url}")
     
     # 2) 로그아웃
-    _logout(driver, wait)
+    BasePage(driver).logout()
     
     # 로그인 페이지 진입 확인
     wait.until(EC.url_contains("signin"))
@@ -607,7 +610,7 @@ def test_account_deletion_button_activation(driver, login):
 
 
 # AC-021: 프로필 이미지 변경
-def test_profile_avatar_change(driver, login):
+def test_profile_avatar_change_applied_all_uis(driver, login):
     """
     프로필 이미지 변경 시 '저장되었습니다.' 스낵바 노출 확인
     1. 로그인 후 계정 관리 페이지 진입
@@ -615,6 +618,10 @@ def test_profile_avatar_change(driver, login):
     3. 드롭다운에서 '프로필 이미지 변경' 클릭
     4. 이미지 파일 업로드
     5. '저장되었습니다.' 스낵바 노출 확인
+    (확장) 프로필 이미지 변경 후
+    - 계정 관리 페이지 3곳
+    - 메인 페이지 2곳
+    - 로그아웃 후 로그인 화면 1곳에 동일한 아바타가 적용되는지 확인
     """
     wait = WebDriverWait(driver, 15)
 
@@ -646,3 +653,5 @@ def test_profile_avatar_change(driver, login):
     driver.refresh()
     # 계정 관리 페이지 다시 로딩 대기
     wait.until(EC.url_contains("members/account"))
+
+

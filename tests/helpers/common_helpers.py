@@ -52,28 +52,6 @@ def _click_profile(driver, wait):
     raise Exception(f"프로필 버튼 클릭 실패 (우측 후보들 시도) : {last_error}")
 
 
-def _logout(driver, wait):
-    """로그아웃"""
-    try:
-        # 프로필 클릭
-        _click_profile(driver, wait)
-        
-        # Logout 버튼이 클릭 가능할 때까지 대기
-        logout_btn = wait.until(EC.element_to_be_clickable(
-            (By.XPATH, "//*[contains(text(), 'Logout') or contains(text(), '로그아웃')]")
-        ))
-        logout_btn.click()
-        
-        # 로그인 페이지 이동 확인
-        wait.until(EC.url_contains("signin"))
-        print("✅ 로그아웃 완료")
-        
-    except Exception as e:
-        print(f"⚠️ UI 로그아웃 실패, 쿠키 삭제로 대체: {e}")
-        driver.delete_all_cookies()
-        driver.refresh()
-
-
 def _find_payment_history(driver, wait):
     """프로필 → Payment History 버튼 '보이는지' 확인"""
     _click_profile(driver, wait)
@@ -175,7 +153,8 @@ def _upload_profile_avatar_image(driver, filename: str = "profile_avatar.jpg"):
       그 아래 src/resources/filename 경로를 사용한다.
     - 로컬/도커/젠킨스 어디서나 같은 폴더 구조면 동작하도록 설계.
     """
-    # 1) 현재 파일 위치 기준으로 프로젝트 루트(team4) 찾기
+    # 1) 현재 파일 위치 기준으로 프로젝트 루트(team4) 찾기.
+    # 로컬 / Docker / Jenkins 어디서든 동일하게 동작하도록 상대경로로 설정
     here = Path(__file__).resolve()
     #   team4/tests/helpers/common_helpers.py   
     project_root = here.parent.parent.parent
