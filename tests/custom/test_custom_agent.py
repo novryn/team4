@@ -1,229 +1,63 @@
-# tests/agent/test_custom_agent.py
 import pytest
-from src.pages.base_page import BasePage
 from selenium.webdriver.common.by import By
 
-
-# ---------------------------------------------------------
-# 공통: 에이전트 탐색(Agent Explorer) 화면 진입 함수
-# ---------------------------------------------------------
-def go_to_agent_explorer(base: BasePage):
-    # 사이드바 Agent Explorer 버튼 locator
-    sidebar_agent_btn = (By.CSS_SELECTOR, "TODO")
-
-    base.click(sidebar_agent_btn)
-    # Agent Explorer 홈 화면 요소
-    agent_home = (By.CSS_SELECTOR, "TODO")
-    base.wait_for_element(agent_home)
-    
-# ----------------------- 001 ------------------------------
-# 화면 진입
-
-def test_CUSTOM_001_agent_explorer_entry(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    # 초기 페이지 요소 locator
-    initial_page = (By.CSS_SELECTOR, "TODO")
-    assert base.is_displayed(initial_page)
-
-# ----------------------- 002 ------------------------------
-# 메인 화면 검색창 표시 확인
-
-def test_CUSTOM_002_search_bar_visible(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    search_input = (By.CSS_SELECTOR, "TODO")  # 검색창
-    search_icon = (By.CSS_SELECTOR, "TODO")   # 검색 아이콘
-
-    assert base.is_displayed(search_input)
-    assert base.is_displayed(search_icon)
-    
-# ----------------------- 003 ------------------------------
-# 상단 로고/이름/안내문 표시 검증
-
-def test_CUSTOM_003_top_info_visible(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    # 에이전트 실행 버튼
-    agent_button = (By.CSS_SELECTOR, "TODO")
-    base.click(agent_button)
-
-    logo = (By.CSS_SELECTOR, "TODO")
-    title = (By.CSS_SELECTOR, "TODO")
-    guide = (By.CSS_SELECTOR, "TODO")
-
-    assert base.is_displayed(logo)
-    assert base.is_displayed(title)
-    assert base.is_displayed(guide)
-
-# ----------------------- 004 ------------------------------
-# 이미지 alt 속성 검증
-
-def test_CUSTOM_004_alt_text_validation(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    # 실행할 에이전트 선택 버튼
-    agent_button = (By.CSS_SELECTOR, "TODO")
-    base.click(agent_button)
-
-    images = driver.find_elements(By.TAG_NAME, "img")
-    assert len(images) > 0
-
-    for img in images:
-        alt = img.get_attribute("alt")
-        assert alt is not None and alt != "", f"이미지 alt 속성 없음 → {img}"
-        
-# ----------------------- 005 ------------------------------
-# 검색 기능 동작 검증
-
-def test_CUSTOM_005_search_feature(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    search_input = (By.CSS_SELECTOR, "TODO")
-    base.type(search_input, "AI")
-
-    # 검색 실행 버튼
-    search_icon = (By.CSS_SELECTOR, "TODO")
-    base.click(search_icon)
-
-    # 검색 결과 영역
-    result_list = (By.CSS_SELECTOR, "TODO")
-    assert base.is_displayed(result_list)
-    
-# ----------------------- 006 ------------------------------
-# 커스텀 에이전트 수정/삭제 후 반영 속도 검증
-
-def test_CUSTOM_006_update_delete_speed(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    # 점(⋮) 버튼 hover/select
-    more_btn = (By.CSS_SELECTOR, "TODO")
-    base.click(more_btn)
-
-    # 수정/삭제 버튼
-    update_btn = (By.CSS_SELECTOR, "TODO")
-    base.click(update_btn)
-
-    # 속도 측정
-    import time
-    start = time.time()
-
-    # 수정/삭제 완료 메시지
-    complete_msg = (By.CSS_SELECTOR, "TODO")
-    base.wait_for_element(complete_msg)
-
-    elapsed = time.time() - start
-    assert elapsed <= 3
-
-# ----------------------- 007 ------------------------------
-# 동일 이름 중복 생성 예외 처리
-
-def test_CUSTOM_007_duplicate_name_error(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    # Create 버튼
-    create_btn = (By.CSS_SELECTOR, "TODO")
-    base.click(create_btn)
-
-    # 이름 입력
-    name_input = (By.CSS_SELECTOR, "TODO")
-    base.type(name_input, "중복테스트")
-
-    # 만들기 버튼
-    create_submit = (By.CSS_SELECTOR, "TODO")
-    base.click(create_submit)
-
-    # 오류 메시지
-    error_msg = (By.CSS_SELECTOR, "TODO")
-
-    assert base.is_displayed(error_msg)
-
-# ----------------------- 008 ------------------------------
-# 새 에이전트 생성
-
-def test_CUSTOM_008_create_new_agent(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    # Create 클릭
-    create_btn = (By.CSS_SELECTOR, "TODO")
-    base.click(create_btn)
-
-    # 필드 입력
-    name_input = (By.CSS_SELECTOR, "TODO")
-    rule_input = (By.CSS_SELECTOR, "TODO")
-
-    base.type(name_input, "테스트")
-    base.type(rule_input, "기본 규칙")
-
-    # 활성화 확인 후 클릭
-    create_submit = (By.CSS_SELECTOR, "TODO")
-    base.click(create_submit)
-
-    # 생성 완료 메시지 확인
-    done_msg = (By.CSS_SELECTOR, "TODO")
-    assert base.is_displayed(done_msg)
-
-
-
-# ----------------------- 009 ------------------------------
-# 필수 필드 미입력 오류
-
-def test_CUSTOM_009_required_field_error(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    create_btn = (By.CSS_SELECTOR, "TODO")
-    base.click(create_btn)
-
-    # 빈 값 유지 후 만들기 클릭
-    create_submit = (By.CSS_SELECTOR, "TODO")
-    base.click(create_submit)
-
-    # 경고 메시지
-    name_err = (By.CSS_SELECTOR, "TODO")
-    rule_err = (By.CSS_SELECTOR, "TODO")
-
-    assert base.is_displayed(name_err)
-    assert base.is_displayed(rule_err)
-
-# ----------------------- 016 ------------------------------
-# 생성된 에이전트 목록 삭제
-
-def test_CUSTOM_016_delete_agent(driver, login):
-    base = BasePage(driver)
-
-    go_to_agent_explorer(base)
-
-    # 생성된 에이전트 클릭
-    agent_item = (By.CSS_SELECTOR, "TODO")
-    base.click(agent_item)
-
-    # 삭제 버튼
-    delete_btn = (By.CSS_SELECTOR, "TODO")
-    base.click(delete_btn)
-
-    # 경고창 삭제 클릭
-    confirm_delete = (By.CSS_SELECTOR, "TODO")
-    base.click(confirm_delete)
-
-    # 삭제 완료 메시지
-    done_msg = (By.CSS_SELECTOR, "TODO")
-    assert base.is_displayed(done_msg)
+@pytest.mark.usefixtures("login", "driver", "page")
+class TestCustomAgent:
+
+    def test_open_custom_agent_page(self, page, login):
+        # TC 1: Custom Agent 페이지 진입 확인
+        driver = login()  # 로그인 후 driver 반환
+        page.open("https://qaproject.elice.io/ai-helpy-chat/custom-agent")
+        assert "custom-agent" in driver.current_url, "Custom Agent 페이지 진입 실패"
+
+    def test_first_ai_card_icon(self, page, login):
+        # TC 2: 첫 번째 AI 카드 아이콘 확인
+        driver = login()
+        page.open("https://qaproject.elice.io/ai-helpy-chat/custom-agent")
+
+        # CSS 시도
+        try:
+            first_card_icon_element = page.wait_for_element(
+                (By.CSS_SELECTOR,
+                 "#\\:rm\\: > div > div > div.flex-1.min-h-0.overflow-hidden > "
+                 "div > div:nth-child(2) > div > div.MuiContainer-root.MuiContainer-maxWidthLg.css-irgchr > "
+                 "div > div:nth-child(1) > a > div.MuiAvatar-root.MuiAvatar-circular.MuiAvatar-colorDefault.css-nicxjw > svg > path"),
+                timeout=10
+            )
+        except:
+            # CSS 실패 시 XPath로 fallback
+            first_card_icon_element = page.wait_for_element(
+                (By.XPATH, '//*[@id=":rm:"]/div/div/div[2]/div/div[2]/div/div[2]/div/div[1]/a/div[1]/svg/path'),
+                timeout=10
+            )
+
+        assert first_card_icon_element.is_displayed(), "첫 번째 AI 카드 아이콘이 보이지 않음"
+
+        # SVG path 검증
+        expected_path = (
+            "M327.5 85.2c-4.5 1.7-7.5 6-7.5 10.8s3 9.1 7.5 10.8L384 128l21.2 56.5c1.7 4.5 6 7.5 10.8 7.5s9.1-3 10.8-7.5L448 128l56.5-21.2c4.5-1.7 7.5-6 7.5-10.8s-3-9.1-7.5-10.8L448 64 426.8 7.5C425.1 3 420.8 0 416 0s-9.1 3-10.8 7.5L384 64 327.5 85.2z"
+            "M205.1 73.3c-2.6-5.7-8.3-9.3-14.5-9.3s-11.9 3.6-14.5 9.3L123.3 187.3 9.3 240C3.6 242.6 0 248.3 0 254.6s3.6 11.9 9.3 14.5l114.1 52.7L176 435.8c2.6 5.7 8.3 9.3 14.5 9.3s11.9-3.6 14.5-9.3l52.7-114.1 114.1-52.7c5.7-2.6 9.3-8.3 9.3-14.5s-3.6-11.9-9.3-14.5L257.8 187.4 205.1 73.3z"
+            "M384 384l-56.5 21.2c-4.5 1.7-7.5 6-7.5 10.8s3 9.1 7.5 10.8L384 448l21.2 56.5c1.7 4.5 6 7.5 10.8 7.5s9.1-3 10.8-7.5L448 448l56.5-21.2c4.5-1.7 7.5-6 7.5-10.8s-3-9.1-7.5-10.8L448 384l-21.2-56.5c-1.7-4.5-6-7.5-10.8-7.5s-9.1 3-10.8 7.5L384 384z"
+        )
+        actual_path = first_card_icon_element.get_attribute("d")
+        assert actual_path == expected_path, "첫 번째 AI 카드 아이콘 path가 예상과 다름"
+
+    def test_chat_history_sort_order(self, page, login):
+        # TC 3: 채팅 히스토리 정렬 순서 확인
+        driver = login()
+        page.open("https://qaproject.elice.io/ai-helpy-chat/agent")
+
+        # 채팅 리스트 컨테이너가 로딩될 때까지 최대 15초 대기
+        chat_container_selector = "div[data-testid='chat-list']"
+        page.wait_for_element((By.CSS_SELECTOR, chat_container_selector), timeout=15)
+
+        # 채팅 리스트 가져오기
+        chat_items = page.get_chat_list()
+        texts = [item.text for item in chat_items]
+
+        # 리스트가 비어있으면 테스트 실패
+        assert texts, "채팅 리스트가 비어있음"
+
+        # 최신순으로 정렬되어 있는지 확인
+        assert texts == sorted(texts, reverse=True), "채팅 히스토리가 최신순으로 정렬되지 않음"
 

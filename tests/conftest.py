@@ -227,3 +227,26 @@ def page(driver):
 
 
 # 11/13, 11/14 코드 로직 순서 및 정렬 정리. 김은아
+
+# ────────────────────────────────────────────────
+# 13. Custom Agent 관련 페이지/유틸 fixture
+# ────────────────────────────────────────────────
+
+@pytest.fixture
+def custom_agent_page(login, page):
+    """
+    Custom Agent 페이지로 이동한 BasePage 객체를 반환
+    """
+    driver = login()
+    page.open("https://qaproject.elice.io/ai-helpy-chat/custom-agent")
+    return page
+
+def wait_for_custom_card(page, index=0, timeout=10):
+    """
+    커스텀 에이전트 카드 리스트에서 index번째 카드 반환
+    """
+    cards = page.wait_for_elements((By.CSS_SELECTOR, ".custom-agent-card"), timeout=timeout)
+    return cards[index]
+
+
+# 11/17 김은아 추가
