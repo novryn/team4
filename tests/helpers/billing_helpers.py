@@ -65,6 +65,26 @@ def _extract_amount(text):
     return int(m.group(1))
 
 
+def _get_credit_amount(driver, wait, sel_credit):
+    """크레딧 금액 안전하게 가져오기"""
+    # 크레딧 버튼 대기
+    credit_btn = wait.until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, sel_credit))
+    )
+    
+    # 금액 로드 대기
+    WebDriverWait(driver, 10).until(
+        lambda d: "₩" in d.find_element(By.CSS_SELECTOR, sel_credit).text
+    )
+    
+    # 최신 텍스트로 금액 추출
+    credit_btn = driver.find_element(By.CSS_SELECTOR, sel_credit)
+    amount = _extract_amount(credit_btn.text)
+    
+    print(f"크레딧 텍스트: '{credit_btn.text}' → 금액: ₩{amount:,}")
+    return amount
+
+
 def _has_won_symbol(driver, el, raw_text: str, retry=3) -> bool:
     """
     요소에 원화 기호(₩)가 있는지 확인
