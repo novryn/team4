@@ -1,1 +1,63 @@
+from src.pages.chat_page import chat_basic
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+
+def test_chat_advanced_001(driver, login):
+    chat = chat_basic(driver)
+    chat.open_chat(login)
+
+    chat.click_plus()
+    WebDriverWait(driver, 10)
+    chat.click_image_button()
+
+    chat.send_message("달")
+
+    chat.click_image_popup()
+
+    WebDriverWait(driver, 10)
+
+    chat.close_image_popup()
+
+def test_chat_advanced_005(driver, login):
+    chat = chat_basic(driver)
+    chat.open_chat(login)
+    
+    chat.click_plus()
+    WebDriverWait(driver, 10)
+
+    chat.click_image_quiz()
+    chat.send_message("사칙연산, 객관식")
+
+    WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.XPATH, "//svg[contains(@class,'lucide-circle-check-big')]")))
+
+def test_chat_advanced_006(driver, login):
+    chat = chat_basic(driver)
+    chat.open_chat(login)
+    
+    chat.click_plus()
+    WebDriverWait(driver, 10)
+
+    chat.click_image_quiz()
+    response_text = chat.send_message("사칙연산, 답이 복수인 객관식")
+
+    WebDriverWait(driver, 30)
+
+    assert len(response_text) > 0
+
+def test_chat_advanced_007(driver, login):
+    chat = chat_basic(driver)
+    chat.open_chat(login)
+    
+    chat.click_plus()
+    WebDriverWait(driver, 10)
+
+    chat.click_image_quiz()
+    response_text = chat.send_message("사칙연산, 주관식")
+
+    WebDriverWait(driver, 30)
+
+    assert len(response_text) > 0
+
+
 
