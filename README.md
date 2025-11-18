@@ -5,7 +5,7 @@ AI Helpy Chat 서비스를 대상으로 한 QA 프로젝트입니다.
 
 버그를 씹어먹고, 품질을 삼키는 팀 F.A.Q의 테스트 기록과 결과를 담고 있습니다.
 
-<br><br><br><br>
+<br><br><br>
 
 ### 📌 팀 소개
 
@@ -14,7 +14,7 @@ AI Helpy Chat 서비스를 대상으로 한 QA 프로젝트입니다.
 - 황지애(테스트 엔지니어): TC제작, 테스트 자동화, 자료 작성, CI/CD 구현
 - 이준혁(X)
 
-<br><br><br><br>
+<br><br><br>
 
 ### 📌 프로젝트 개요
 
@@ -26,15 +26,13 @@ AI Helpy Chat 서비스를 대상으로 한 QA 프로젝트입니다.
 
 대상 서비스: AI Helpy Chat 사이트
 
-
-
+<br><br><br>
 
 ### 📌 테스트 케이스
 
 https://docs.google.com/spreadsheets/d/1ZZv05y546QGz5dKMhhKX0-m8CWsCX8QYq6n-RxrV8to/edit?usp=sharing
 
-
-
+<br><br><br>
 
 ### 📌 테스트 범위
 
@@ -65,8 +63,7 @@ https://docs.google.com/spreadsheets/d/1ZZv05y546QGz5dKMhhKX0-m8CWsCX8QYq6n-RxrV
 - 새로운 후기, 또 먹은 후기 기능
 - 내가 먹은 메뉴 확인
 
-
-
+<br><br><br>
 
 ### 📌 진행 기간/ 일정
 
@@ -80,8 +77,7 @@ https://docs.google.com/spreadsheets/d/1ZZv05y546QGz5dKMhhKX0-m8CWsCX8QYq6n-RxrV
 
 - 11.20 : 최종 정리 및 결과물 제출
 
-
-
+<br><br><br>
 
 ### 📌 테스트 환경
 
@@ -91,8 +87,7 @@ OS 및 사용 IDE:
 - Windows 10 Pro (22H2) / VisualStudioCode
 - Browser: Chrome
 
-
-
+<br><br><br>
 
 ### 📌 테스트 방식
 
@@ -101,8 +96,7 @@ OS 및 사용 IDE:
 <img src="https://img.shields.io/badge/pytest-%23ffffff.svg?style=for-the-badge&logo=pytest&logoColor=2f9fe3">
 <img src="https://img.shields.io/badge/jenkins-%232C5263.svg?style=for-the-badge&logo=jenkins&logoColor=white">
 
-
-
+<br><br><br>
 
 ### 📌 설치할 프로그램
 
@@ -112,8 +106,7 @@ OS 및 사용 IDE:
 - Google Chrome  
 - Jenkins
 
-
-
+<br><br><br>
 
 ### 📌 젠킨스 - 필수 플러그인
 
@@ -122,8 +115,7 @@ OS 및 사용 IDE:
 - gitlab api plugin
 - gitlab plugin
 
-
-
+<br><br><br>
 
 ### 📌 프로그램 실행 방법(Windows CMD/PowerShell)
 
@@ -149,8 +141,7 @@ OS 및 사용 IDE:
 
 - `$ deactivate`
 
-
-
+<br><br><br>
 
 ### 📌 Commit Conventions
 | Message  | Description                   |
