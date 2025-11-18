@@ -1,6 +1,5 @@
 import pytest
 from selenium.webdriver.common.by import By
-from src.pages.custom_page import go_to_custom_agent  # Custom Agent 이동 헬퍼
 from src.pages.base_page import BasePage
 
 
@@ -11,20 +10,21 @@ class TestCustomAgent:
         """
         TC 1: Custom Agent 페이지 진입 확인
         """
-        page = go_to_custom_agent(driver)  # 로그인 후 Custom Agent 페이지 이동
+        page = BasePage(driver)
+        page.open_custom_agent()
         assert "custom-agent" in driver.current_url, "Custom Agent 페이지 진입 실패"
 
     def test_first_ai_card_icon(self, driver):
         """
-        TC 2: 첫 번째 AI 카드 아이콘 표시 확인
+        TC 2: Custom Agent 첫 번째 AI 카드 아이콘 확인
         """
-        page = go_to_custom_agent(driver)
+        page = BasePage(driver)
+        page.open_custom_agent()
 
         first_card = page.wait_for_element(
             (By.CSS_SELECTOR, "div[data-testid='ai-card']:first-child"),
             timeout=15
         )
-
         assert first_card.is_displayed(), "첫 번째 AI 카드가 보이지 않음"
 
     def test_chat_history_sort_order(self, driver):
