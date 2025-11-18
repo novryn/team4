@@ -1,11 +1,14 @@
-#### 👩🏼‍💻👨🏼‍💻 4팀
+# Defectives 🕵🏻‍♀️🕵🏻‍♂️🕵🏻‍♀️ 디펙티브즈 #
 
+Bug + Detective = Defective
 
-AI Helpy Chat 서비스를 대상으로 한 QA 프로젝트입니다.
+버그가 사라지는 순간까지 추적하는 사람들
 
-버그를 씹어먹고, 품질을 삼키는 팀 F.A.Q의 테스트 기록과 결과를 담고 있습니다.
+문제의 근본 원인을 해부하고,
 
-<br><br><br>
+사용자의 경험을 더 나은 방향으로 밀어붙이는 품질 탐정단 입니다.
+
+<br><br>
 
 ### 📌 팀 소개
 
@@ -14,56 +17,51 @@ AI Helpy Chat 서비스를 대상으로 한 QA 프로젝트입니다.
 - 황지애(테스트 엔지니어): TC제작, 테스트 자동화, 자료 작성, CI/CD 구현
 - 이준혁(X)
 
-<br><br><br>
+<br><br>
 
 ### 📌 프로젝트 개요
 
 프로젝트명: AI Helpy Chat QA 프로젝트
 
-팀명: 4팀
+팀명: Defectives 디펙티브즈
 
 목표: 이용자 중심의 웹 서비스 품질을 관리하며, 주요 기능의 정상 작동을 보장합니다.
 
 대상 서비스: AI Helpy Chat 사이트
 
-<br><br><br>
+<br><br>
 
 ### 📌 테스트 케이스
 
 https://docs.google.com/spreadsheets/d/1ZZv05y546QGz5dKMhhKX0-m8CWsCX8QYq6n-RxrV8to/edit?usp=sharing
 
-<br><br><br>
+<br><br>
 
 ### 📌 테스트 범위
 
-1. 회원가입
+1.**회원가입**
 - 회원가입 기능
 
-2. 로그인
+2.**로그인**
 - 비밀번호 표시/가리기 기능
 - 로그인 기능
 
-3. 홈
+3. **홈**
 - 혼자 먹기, 같이 먹기, 회식 하기에서 음식 추천 받는 기능
 - 메뉴 추천 기능
 - 나의 취향 분석 확인
 
-4. 팀 피드
+4. **팀피드**
 - 팀 변경 기능
 - 팀 프로필 수정 기능
 - 팀이 먹은 메뉴 확인
 - 새로운 후기, 또 먹은 후기 기능
 
-5. 히스토리
+5. **히스토리**
 - 추천 받은 메뉴 확인
 - 추천 후기 기능
 
-6. 개인 피드
-- 개인 프로필 수정 기능
-- 새로운 후기, 또 먹은 후기 기능
-- 내가 먹은 메뉴 확인
-
-<br><br><br>
+<br><br>
 
 ### 📌 진행 기간/ 일정
 
@@ -77,17 +75,17 @@ https://docs.google.com/spreadsheets/d/1ZZv05y546QGz5dKMhhKX0-m8CWsCX8QYq6n-RxrV
 
 - 11.20 : 최종 정리 및 결과물 제출
 
-<br><br><br>
+<br><br>
 
 ### 📌 테스트 환경
 
-OS 및 사용 IDE:
+**OS 및 사용 IDE:**
 - Windows 11 (25H2) / VisualStudioCode
 - Windows 11 (24H2) / VisualStudioCode
 - Windows 10 Pro (22H2) / VisualStudioCode
 - Browser: Chrome
 
-<br><br><br>
+<br><br>
 
 ### 📌 테스트 방식
 
@@ -96,7 +94,7 @@ OS 및 사용 IDE:
 <img src="https://img.shields.io/badge/pytest-%23ffffff.svg?style=for-the-badge&logo=pytest&logoColor=2f9fe3">
 <img src="https://img.shields.io/badge/jenkins-%232C5263.svg?style=for-the-badge&logo=jenkins&logoColor=white">
 
-<br><br><br>
+<br><br>
 
 ### 📌 설치할 프로그램
 
@@ -106,7 +104,7 @@ OS 및 사용 IDE:
 - Google Chrome  
 - Jenkins
 
-<br><br><br>
+<br><br>
 
 ### 📌 젠킨스 - 필수 플러그인
 
@@ -115,13 +113,13 @@ OS 및 사용 IDE:
 - gitlab api plugin
 - gitlab plugin
 
-<br><br><br>
+<br><br>
 
 ### 📌 프로그램 실행 방법(Windows CMD/PowerShell)
 
 1. 설치 방법
 
-파이썬과 pip 라이브러리 명령어:
+**파이썬과 pip 라이브러리 명령어:**
 
 - `$ python -m venv venv`
 - `$ venv/scripts/activate`
@@ -129,7 +127,7 @@ OS 및 사용 IDE:
 
 2. 실행 방법
 
-가상환경 활성화(비활성화 상태 시 실행):
+**가상환경 활성화(비활성화 상태 시 실행):**
 
 - `$ venv/scripts/activate`
 
@@ -141,7 +139,7 @@ OS 및 사용 IDE:
 
 - `$ deactivate`
 
-<br><br><br>
+<br><br>
 
 ### 📌 Commit Conventions
 | Message  | Description                   |
