@@ -9,19 +9,19 @@ from selenium.common.exceptions import TimeoutException
 # --- Avatar Locators ---
 
 # 1) 계정 관리 페이지 - 왼쪽 큰 아바타
-ACCOUNT_LEFT_AVATAR = (By.CSS_SELECTOR, ".MuiAvatar-root img")
+ACCOUNT_LEFT_AVATAR = (By.CSS_SELECTOR, ".MuiAvatar-root")
 
 # 2) 우측 상단 헤더 아바타 (전체 페이지 공통)
-HEADER_AVATAR = (By.CSS_SELECTOR, "button.MuiAvatar-root img")
+HEADER_AVATAR = (By.CSS_SELECTOR, "button.MuiAvatar-root")
 
 # 3) 프로필 드롭다운 내 아바타
-ACCOUNT_DROPDOWN_AVATAR = (By.CSS_SELECTOR, ".MuiListItemAvatar-root img")
+ACCOUNT_DROPDOWN_AVATAR = (By.CSS_SELECTOR, ".MuiListItemAvatar-root")
 
 # 4) 메인 페이지 - 사용자 정보 블록의 아바타
-MAIN_DROPDOWN_AVATAR = (By.CSS_SELECTOR, "[data-elice-user-profile-header] .MuiAvatar-root img")
+MAIN_DROPDOWN_AVATAR = (By.CSS_SELECTOR, "[data-elice-user-profile-header] .MuiAvatar-root")
 
 # 5) 로그인 페이지 아바타
-LOGIN_PAGE_AVATAR = (By.CSS_SELECTOR, ".MuiAvatar-root.MuiAvatar-circular img")
+LOGIN_PAGE_AVATAR = (By.CSS_SELECTOR, ".MuiAvatar-root.MuiAvatar-circular")
 
 
 def _click_profile(driver, wait: WebDriverWait):
@@ -181,35 +181,54 @@ def _upload_profile_avatar_image(driver, filename: str = "profile_avatar.jpg"):
 
 def _select_profile_avatar_menu(driver, wait, text: str):
     """
-    아바타 편집 드롭다운에서 메뉴 항목 클릭
+    아바타 편집 드롭다운에서 메뉴 항목 클릭 가능한지 확인
     예: '프로필 이미지 변경', '프로필 이미지 제거'
     """
     item = wait.until(EC.element_to_be_clickable((
         By.XPATH,
         f"//li[.='{text}' or contains(., '{text}')]"
     )))
-    # item.click()
+    
+    # 클릭 가능한지 확인
+    assert item.is_displayed(), f"{text} 항목이 표시되지 않음"
+    
+    return item
 
 
 # AC-021 공통 유틸: avatar src 추출
 def _get_avatar_src(driver, locator, wait: WebDriverWait | None = None, normalize: bool = True) -> str | None:
-    if wait is not None:
-        img = wait.until(EC.visibility_of_element_located(locator))
-    else:
-        img = driver.find_element(*locator)
-
-    src = img.get_attribute("src")
-    if not src:
+    try:
+        if wait is not None:
+            avatar_container = wait.until(EC.presence_of_element_located(locator))
+        else:
+            avatar_container = driver.find_element(*locator)
+        
+        # 내부에 img 있는지 확인
+        try:
+            img = avatar_container.find_element(By.TAG_NAME, "img")
+            src = img.get_attribute("src")
+            
+            if not src:
+                return None
+            
+            if not normalize:
+                return src
+            
+            base = src.split("?", 1)[0]
+            filename = base.rsplit("/", 1)[-1]
+            return filename
+            
+        except:
+            # img 없으면 SVG (기본 아바타)
+            try:
+                svg = avatar_container.find_element(By.TAG_NAME, "svg")
+                return "PersonIcon"
+            except:
+                return None
+    
+    except Exception as e:
+        print(f"⚠️ 아바타 찾기 실패 ({locator}): {e}")
         return None
-
-    if not normalize:
-        return src
-
-    # 1) ? 뒤의 토큰 제거
-    base = src.split("?", 1)[0]
-    # 2) 마지막 / 뒤의 파일 이름만 남기기
-    filename = base.rsplit("/", 1)[-1]
-    return filename
 
 
 # 계정 관리 페이지: 3곳 src 수집

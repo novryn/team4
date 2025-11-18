@@ -19,7 +19,7 @@ class BasePage:
     def open(self, url):
         self.driver.get(url)
         # 웹 페이지 열기
-        
+
     def wait_for_clickable(self, locator, timeout=30):
         return WebDriverWait(self.driver, timeout).until(
             EC.element_to_be_clickable(locator)
@@ -29,15 +29,12 @@ class BasePage:
         return WebDriverWait(self.driver, timeout).until(
             EC.visibility_of_element_located(locator)
         )
-        
         # 단일 요소
         # 화면에 요소가 나타날 때까지 기다림 (locator: 찾고 싶은 버튼/입력창/영역 위치)
-    
+
     def wait_for_elements(self, locator, timeout=30):
-        
         # 여러 요소를 기다려서 리스트로 반환
         # locator: (By.CSS_SELECTOR, 'selector') 형태
-        
         return WebDriverWait(self.driver, timeout).until(
             lambda d: d.find_elements(*locator) if d.find_elements(*locator) else False
         )
@@ -81,7 +78,6 @@ class BasePage:
         사이드바의 채팅 히스토리 목록 강제 로드 + chat_items 반환
         마지막까지 스크롤해서 모든 항목을 가져오도록 수정
         """
-
         # 대화 목록 전체 컨테이너 대기
         container = WebDriverWait(self.driver, timeout).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="virtuoso-item-list"]'))
@@ -109,8 +105,8 @@ class BasePage:
 
         return chat_items
 
-
     # -------------------- 11/14 김은아 추가 --------------------
+
     def get_menu_buttons(self):
         chat_items = self.get_chat_list()
         menu_buttons = []
@@ -141,7 +137,7 @@ class BasePage:
             )
         )
         return rename_button, delete_button
-    
+
     def click_delete_popup(self):
         # 마지막 Delete 버튼 (팝업 안)
         wait = WebDriverWait(self.driver, 10)
@@ -151,10 +147,12 @@ class BasePage:
             )
         )
         final_delete.click()
-        
+
     def scroll_into_view(self, element):
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
-    
+
+    # --------------- 11/14 로그아웃 픽스쳐 추가(김은아) ---------------
+
     def logout(self):
         """
         우측 상단 프로필 아바타 버튼을 클릭해 드롭다운을 연 뒤,
@@ -187,7 +185,10 @@ class BasePage:
             self.driver.execute_script("arguments[0].click();", logout_btn)
         except TimeoutException as e:
             pytest.fail(f"로그아웃 실패: Logout/로그아웃 버튼을 찾거나 클릭할 수 없습니다: {e}")
-        
-    # 11/14 로그아웃 픽스쳐 추가(김은아), 11/18 수정(황지애)  
 
-        
+# ----------------------------- 11/18 수정(황지애) -----------------------------
+
+    def open_custom_agent(self):
+        self.open("https://qaproject.elice.io/ai-helpy-chat/custom-agent")
+
+# ------------------- 11/18 커스텀 페이지 로그인 파트 추가 (김은아) -------------------
