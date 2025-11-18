@@ -129,9 +129,12 @@ def test_logout_prevents_back_navigation(driver, login):
     print(f"✅ 메인 페이지 진입: {main_page_url}")
     
     # 2) 로그아웃
+    print("\n=== 로그아웃 시도 ===")
+    print(f"로그아웃 전 URL: {driver.current_url}")
+    
     BasePage(driver).logout()
     
-    # 로그인 페이지 진입 확인
+    # 로그인 페이지 이동 대기
     wait.until(EC.url_contains("signin"))
     print(f"✅ 로그아웃 후 현재 URL: {driver.current_url}")
     
@@ -863,3 +866,197 @@ def test_profile_avatar_remove_applied_all_uis(driver, login):
     print("🎉 모든 페이지에서 기본 프로필 이미지(PersonIcon)가 정상적으로 반영되었음을 확인했습니다!")
 
 
+# AC-024: 기관 관리 메뉴 접근 확인
+def test_organization_admin_menu_access(driver, login):
+    """
+    기관 관리 페이지 진입 및 사이드 메뉴 접근 확인
+    1. 계정 관리 > 내 기관 탭
+    2. qaproject.elice.io 가기 클릭
+    3. 톱니바퀴 > 기관 관리
+    4. 사이드 메뉴 7개 확인
+    """
+    
+    wait = WebDriverWait(driver, 15)
+    
+    # 1) 로그인 → 계정 관리 페이지
+    driver = login()
+    _click_profile(driver, wait)
+    _account_mgmt_page_open(driver)
+    
+    # 2) 내 기관 탭 클릭
+    my_org_tab = wait.until(EC.element_to_be_clickable((
+        By.XPATH,
+        "//a[contains(text(), '내 기관') or contains(text(), 'My Organization')]"
+    )))
+    my_org_tab.click()
+    
+    # URL 변경 확인
+    wait.until(EC.url_contains("/members/organization"))
+    print("✅ 내 기관 탭 이동")
+    
+    # 3) qaproject.elice.io 가기 링크 클릭
+    go_link = wait.until(EC.element_to_be_clickable((
+        By.CSS_SELECTOR,
+        "a[href='https://qaproject.elice.io'][target='_blank']"
+    )))
+        
+    # 현재 탭 개수 저장
+    current_tabs = len(driver.window_handles)
+    print(f"클릭 전 탭 개수: {current_tabs}")
+
+    go_link.click()
+    print("✅ qaproject.elice.io 가기 클릭")
+
+    # 3-1) 새 탭이 열릴 때까지 대기
+    WebDriverWait(driver, 10).until(lambda d: len(d.window_handles) > current_tabs)
+    print(f"새 탭 열림! 현재 탭 개수: {len(driver.window_handles)}")
+
+    # 3-2) 새 탭으로 전환
+    new_tab = driver.window_handles[-1]
+    driver.switch_to.window(new_tab)
+    print(f"새 탭으로 전환: {new_tab}")
+
+    # 🆕 3-3) URL이 실제로 바뀔 때까지 대기
+    WebDriverWait(driver, 10).until(
+        lambda d: "qaproject.elice.io" in d.current_url
+    )
+    print(f"URL 확인: {driver.current_url}")
+
+    # 🆕 3-4) 페이지가 완전히 로드될 때까지 대기
+    WebDriverWait(driver, 15).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    # 🆕 3-5) body 태그가 있는지 확인 (실제 내용 로드됨)
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    )
+
+    # 🆕 3-6) 최소한 버튼이 하나라도 있는지 확인
+    WebDriverWait(driver, 10).until(
+        lambda d: len(d.find_elements(By.TAG_NAME, "button")) > 0
+    )
+
+    print(f"✅ 메인 페이지 완전 로드 (버튼 개수: {len(driver.find_elements(By.TAG_NAME, 'button'))})")
+
+    # 4) 톱니바퀴 버튼 클릭
+    print("\n=== 톱니바퀴 버튼 찾기 ===")
+
+    # 모든 IconButton 찾기
+    icon_buttons = driver.find_elements(By.CSS_SELECTOR, "button.MuiIconButton-root")
+    print(f"IconButton 개수: {len(icon_buttons)}")
+
+    settings_button = None
+    for i, btn in enumerate(icon_buttons):
+        try:
+            gear_svg = btn.find_element(By.CSS_SELECTOR, "svg[data-icon='gear']")
+            settings_button = btn
+            print(f"✅ 톱니바퀴 버튼 발견 (#{i})")
+            break
+        except:
+            continue
+
+    if settings_button is None:
+        # 대안: data-testid로 찾기
+        try:
+            gear_icon = driver.find_element(By.CSS_SELECTOR, "svg[data-testid='gearIcon']")
+            settings_button = gear_icon.find_element(By.XPATH, "./ancestor::button")
+            print("✅ 톱니바퀴 버튼 발견 (data-testid)")
+        except:
+            pass
+
+    assert settings_button is not None, "톱니바퀴 버튼을 찾을 수 없음"
+
+    # 스크롤 & 클릭
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", settings_button)
+    WebDriverWait(driver, 1).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    # 클릭 시도
+    try:
+        settings_button.click()
+    except:
+        # JavaScript로 클릭
+        driver.execute_script("arguments[0].click();", settings_button)
+
+    print("✅ 톱니바퀴 버튼 클릭")
+
+    # 드롭다운 열릴 때까지 대기
+    WebDriverWait(driver, 5).until(
+        EC.visibility_of_element_located((
+            By.CSS_SELECTOR,
+            "a[href*='/admin/org'][target='_blank']"
+        ))
+    )
+    print("✅ 드롭다운 열림")
+    
+    # 5) 기관 관리 메뉴 클릭
+    try:
+        # 정확한 href로 찾기
+        org_admin_menu = wait.until(EC.element_to_be_clickable((
+            By.CSS_SELECTOR,
+            "a[href='https://qaproject.elice.io/admin/org'][target='_blank']"
+        )))
+    except:
+        # 대안: buildingsIcon으로 찾기
+        org_admin_menu = wait.until(EC.element_to_be_clickable((
+            By.XPATH,
+            "//a[.//svg[@data-testid='buildingsIcon']]"
+        )))
+
+    # 클릭
+    try:
+        org_admin_menu.click()
+    except:
+        # JavaScript 클릭
+        driver.execute_script("arguments[0].click();", org_admin_menu)
+
+    print("✅ 기관 관리 메뉴 클릭")
+    
+    # 5-1) 새 탭 전환
+    WebDriverWait(driver, 5).until(lambda d: len(d.window_handles) > 2)
+    driver.switch_to.window(driver.window_handles[-1])
+    
+    # 기관 관리 페이지 로드 확인
+    wait.until(EC.url_contains("/admin/org"))
+    wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
+    print(f"✅ 기관 관리 페이지 로드: {driver.current_url}")
+    
+    # 6) 왼쪽 사이드 메뉴 7개 확인
+    print("\n=== 사이드 메뉴 확인 ===")
+    
+    side_menus = [
+        ("기본 정보", "/admin/org/organization/general"),
+        ("SEO 설정", "/admin/org/organization/seo"),
+        ("구성원 관리", "/admin/org/members"),
+        ("가입 설정", "/admin/org/organization/enroll"),
+        ("청구내역", "/admin/org/billing/payments/invoice"),
+        ("결제 수단 관리", "/admin/org/billing/payments/methods"),
+        ("크레딧", "/admin/org/billing/payments/credit"),
+    ]
+    
+    for menu_name, menu_path in side_menus:
+        try:
+            # href로 메뉴 찾기 (가장 확실)
+            menu_link = wait.until(EC.element_to_be_clickable((
+                By.CSS_SELECTOR,
+                f"a[href='{menu_path}']"
+            )))
+            
+            # 클릭
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", menu_link)
+            WebDriverWait(driver, 1).until(
+                lambda d: d.execute_script("return document.readyState") == "complete"
+            )
+            menu_link.click()
+            
+            # URL 변경 확인
+            wait.until(EC.url_contains(menu_path))
+            print(f"✅ {menu_name} 페이지 진입")
+            
+        except Exception as e:
+            print(f"❌ {menu_name} 메뉴 클릭 실패: {e}")
+            raise
+    
+    print(f"\n✅ 모든 사이드 메뉴 접근 확인 완료 (총 {len(side_menus)}개)")
