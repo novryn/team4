@@ -6,6 +6,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ActionChains
 from selenium.common.exceptions import MoveTargetOutOfBoundsException
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.keys import Keys
 
 # Common 헬퍼 함수 import
 from tests.helpers.common_helpers import (
@@ -17,7 +19,7 @@ from tests.helpers.billing_helpers import (
     _dump, _dump_on_fail, _find_credit_btn, _extract_amount, _has_won_symbol,
     _css, _computed_bg, _any_prop_changed, _style_snapshot, PROPS,
     _hover, _hover_strong, _is_in_hover_chain,
-    _click_profile, debug_wait
+    _click_profile, debug_wait, _get_credit_amount,
 )
 
 # BasePage import
@@ -91,7 +93,8 @@ def test_credit_button_visible_and_amount_format(driver, login):
         _dump_on_fail(driver, "credit_amount_fail")
         raise
 
-# BILL-003
+
+# BILL-003: 성공률 80% (2/10 XFAIL)
 def test_credit_button_hover_color(driver, login):
     driver = login()
     wait = WebDriverWait(driver, 10)
@@ -157,6 +160,7 @@ def test_credit_button_hover_color(driver, login):
         print("DEBUG ERROR:", repr(e))
         raise
 
+
 # BILL-004: 크레딧 버튼 클릭 시 새 창 열림
 def test_credit_button_opens_new_window(driver, login):
     driver = login()
@@ -189,16 +193,16 @@ def test_credit_button_opens_new_window(driver, login):
     
     print(f"✅ 새 창 URL: {current_url}")
 
-# BILL-005
+
+# BILL-005: XFAIL, PASS
 def test_prompt_decreases_credit(driver, login):
     driver = login()
     wait = WebDriverWait(driver, 10)
     
     sel_credit = "a[href$='/admin/org/billing/payments/credit'], a:has(svg[data-testid*='circle-c'])"
-    credit_btn = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, sel_credit)))
-    WebDriverWait(driver, 1).until(lambda d: d.execute_script("return document.readyState") == "complete")
     
-    initial_amount = _extract_amount(credit_btn.text)
+    # 초기 크레딧                  ┌ 🆕 대기 시간 늘림
+    initial_amount = _get_credit_amount(driver, wait, sel_credit)
     
     if initial_amount == 0:
         pytest.skip("크레딧 0원")
@@ -210,9 +214,7 @@ def test_prompt_decreases_credit(driver, login):
         (By.CSS_SELECTOR, "textarea, input[placeholder*='message']")
     ))
     
-    from selenium.webdriver.common.keys import Keys
     prompt_input.click()
-    # 입력 필드가 포커스를 받을 때까지 대기
     WebDriverWait(driver, 1).until(
         lambda d: d.execute_script("return document.activeElement === arguments[0]", prompt_input)
     )
@@ -221,29 +223,28 @@ def test_prompt_decreases_credit(driver, login):
     
     print("✅ 메시지 전송")
     
-    # ✅ 10초만 대기
-    WebDriverWait(driver, 10).until(lambda d: d.execute_script("return document.readyState") == "complete")
+    WebDriverWait(driver, 10).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
     
     # 재로그인
     driver.delete_all_cookies()
     driver = login()
     wait = WebDriverWait(driver, 10)
-    WebDriverWait(driver, 1).until(lambda d: d.execute_script("return document.readyState") == "complete")
     
-    # 크레딧 확인
-    credit_btn = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, sel_credit)))
-    WebDriverWait(driver, 1).until(lambda d: d.execute_script("return document.readyState") == "complete")
-    final_amount = _extract_amount(credit_btn.text)
+    # 최종 크레딧
+    final_amount = _get_credit_amount(driver, wait, sel_credit)
     
+    # 결과 검증
     decreased = initial_amount - final_amount
     print(f"초기: ₩{initial_amount:,} → 최종: ₩{final_amount:,} (차감: ₩{decreased:,})")
     
-    # 차감 안 됐으면 xfail (서버 처리 시간 때문)
     if final_amount >= initial_amount:
         pytest.xfail("크레딧 차감 지연 (서버 처리 시간)")
     
     assert final_amount < initial_amount
     print("✅ 통과")
+
 
 # BILL-006
 def test_payment_history_button_visible(driver, login):
@@ -265,6 +266,7 @@ def test_payment_history_button_visible(driver, login):
         with open("payment_history_missing.html", "w", encoding="utf-8") as f:
             f.write(driver.page_source)
         pytest.fail("❌ Payment History 버튼을 찾을 수 없음")
+
 
 # BILL-007
 def test_payment_history_hover_color(driver, login):
@@ -343,8 +345,10 @@ def test_payment_history_hover_color(driver, login):
     assert changed_self or changed_vs_neighbor or in_hover, "hover 변화/상태가 감지되어야 합니다."
     print(f"✅ Payment History hover 감지: self={changed_self}, vsNeighbor={changed_vs_neighbor}, inHover={in_hover}")
 
-# BILL-008: Payment History 권한 없음 페이지 연결 확인
+
+# BILL-008: XFAIL
 def test_payment_history_page_permission_denied(driver, login):
+    """Payment History 권한 없음 페이지 연결 확인"""
     driver = login()
     wait = WebDriverWait(driver, 10)
 
@@ -386,6 +390,7 @@ def test_payment_history_page_permission_denied(driver, login):
     denied_signals = ["권한", "Permission", "denied", "forbidden", "접근 불가", "Access is denied"]
     page_text = (driver.page_source or "").lower()
     pytest.xfail(f"권한 없음으로 결제 내역 접근 불가 (env 제약). URL={current_url}")
+
 
 # BILL-011
 def test_credit_page_ui_elements(driver, login):
@@ -447,6 +452,7 @@ def test_credit_page_ui_elements(driver, login):
         assert found, f"{name}를 찾을 수 없음"
     
     print("\n✅ 모든 UI 요소 확인 완료")
+
 
 # BILL-012 (PG 결제창 확인까지만 검증)
 def test_register_payment_method_until_currency_confirm(driver, login):
@@ -579,6 +585,7 @@ def test_register_payment_method_until_currency_confirm(driver, login):
     except:
         print("⚠️ PG 결제창 감지 실패")
         pytest.fail("PG 결제창 감지 실패")
+
 
 # BILL-013: 크레딧 사용 내역 타임존 일관성
 def test_credit_usage_history_timezone_consistency(driver, login):
@@ -747,6 +754,7 @@ def test_credit_usage_history_timezone_consistency(driver, login):
     print("✅ 타임존 일관성 확인 완료")
     print(f"✅ 모든 날짜가 동일한 기준으로 표시됨 ({len(date_texts)}개 확인)")
 
+
 # BILL-022
 def test_auto_recharge_toggle_exists(driver, login):
     """크레딧 페이지에 자동 충전 토글 버튼이 있는지 확인"""
@@ -844,6 +852,7 @@ def test_auto_recharge_toggle_exists(driver, login):
     if is_disabled:
         print("⚠️ 토글이 비활성화(disabled) 상태입니다")
         print("   (결제 수단 미등록 등의 이유일 수 있음)")
+
 
 # BILL-026: 크레딧 충전 버튼 disabled 상태 확인
 def test_credit_charge_button_disabled_without_selection(driver, login):

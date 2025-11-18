@@ -56,22 +56,20 @@ def _click_profile(driver, wait: WebDriverWait):
     
 
 def _find_payment_history(driver, wait):
-    """프로필 → Payment History 버튼 '보이는지' 확인"""
-    _click_profile(driver, wait)
-
+    """
+    Payment History(결제 내역) 버튼 찾기
+    (프로필 메뉴를 먼저 열어야 함)
+    """
+    # Payment History가 보일 때까지 대기
     payment_history = wait.until(
         EC.visibility_of_element_located(
-            (
-                By.XPATH,
-                "//*[contains(text(), 'Payment History') or contains(text(), '결제 내역')]"
-            )
+            (By.CSS_SELECTOR, "a[href='https://payments.elice.io']")
         )
     )
-
-    # 추가 검증
-    assert payment_history.is_displayed(), "Payment History 버튼이 visible 상태가 아님"
-
+    
+    assert payment_history.is_displayed()
     print("✅ Payment History 버튼 visible 확인")
+    return payment_history
 
 
 def _set_language_korean(driver):

@@ -250,3 +250,16 @@ def wait_for_custom_card(page, index=0, timeout=10):
 
 
 # 11/17 김은아 추가
+
+# ───────────────────────────────────────────────────────────────
+# 14. 커스텀 에이전트 카드 반환 헬퍼 (TC2용)
+# ───────────────────────────────────────────────────────────────
+
+def wait_for_custom_card(page, index=0, timeout=10):
+    """
+    커스텀 에이전트 카드 리스트에서 index번째 카드 반환
+    """
+    cards = page.wait_for_elements((By.CSS_SELECTOR, "div[data-testid='ai-card']"), timeout=timeout)
+    return cards[index]
+
+# 11/18 김은아 추가

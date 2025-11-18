@@ -129,9 +129,12 @@ def test_logout_prevents_back_navigation(driver, login):
     print(f"✅ 메인 페이지 진입: {main_page_url}")
     
     # 2) 로그아웃
+    print("\n=== 로그아웃 시도 ===")
+    print(f"로그아웃 전 URL: {driver.current_url}")
+    
     BasePage(driver).logout()
     
-    # 로그인 페이지 진입 확인
+    # 로그인 페이지 이동 대기
     wait.until(EC.url_contains("signin"))
     print(f"✅ 로그아웃 후 현재 URL: {driver.current_url}")
     
