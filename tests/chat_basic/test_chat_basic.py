@@ -62,8 +62,8 @@ def test_chat_basic_004(driver, login):# 클립보드, 정상 실행
 
 
 def test_chat_basic_005(driver, login):# 도움됨 클릭 후 피드백 입력 및 전송
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located(
@@ -80,8 +80,8 @@ def test_chat_basic_005(driver, login):# 도움됨 클릭 후 피드백 입력 �
 
 
 def test_chat_basic_006(driver, login):# 도움 안됨 클릭후 피드백 입력 및 전송
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located(
@@ -97,8 +97,8 @@ def test_chat_basic_006(driver, login):# 도움 안됨 클릭후 피드백 입�
 
 
 def test_chat_basic_007(driver, login):# 이미 입력한 채팅 수정
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located(
@@ -115,8 +115,8 @@ def test_chat_basic_007(driver, login):# 이미 입력한 채팅 수정
 
 
 def test_chat_basic_008(driver, login): # 채팅 수정 선택했다 취소하기
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located(
@@ -131,8 +131,8 @@ def test_chat_basic_008(driver, login): # 채팅 수정 선택했다 취소하�
 
 
 def test_chat_basic_009(driver, login): # 스크롤바 기능 확인 1
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located(
@@ -148,8 +148,8 @@ def test_chat_basic_009(driver, login): # 스크롤바 기능 확인 1
 
 
 def test_chat_basic_010(driver, login): # 초기화 버튼, 정상 실행
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located(
@@ -162,8 +162,8 @@ def test_chat_basic_010(driver, login): # 초기화 버튼, 정상 실행
 
 
 def test_chat_basic_011(driver, login):# 채팅 성능 테스트, 정상 실행
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     
 
@@ -172,8 +172,8 @@ def test_chat_basic_011(driver, login):# 채팅 성능 테스트, 정상 실행
 
 
 def test_chat_basic_012(driver, login): # 스크립트 입력, 정상 실행
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
 
     response_text = chat.send_message("<script>alert('XSS')</script>")
@@ -183,8 +183,8 @@ def test_chat_basic_012(driver, login): # 스크립트 입력, 정상 실행
 
 
 def test_chat_basic_013(driver, login): # 비정상 채팅 입력, 정상 실행
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     response_text = chat.send_message("ㅑㄴ루ㅏ두ㅐㄴ")
 
@@ -193,8 +193,8 @@ def test_chat_basic_013(driver, login): # 비정상 채팅 입력, 정상 실행
 
 
 def test_chat_basic_014(driver, login): # 스페이스바만 입력, 실행은 정상, 성공 확인여부 수정 필요
-    driver = login()
     chat = chat_basic(driver)
+    chat.open_chat(login)
 
     response_text = chat.send_message(" ")
 

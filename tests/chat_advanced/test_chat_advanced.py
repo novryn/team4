@@ -12,9 +12,8 @@ def test_chat_advanced_001(driver, login):
     chat.click_image_button()
 
     chat.send_message("달")
-
+    WebDriverWait(driver, 10)
     chat.click_image_popup()
-
     WebDriverWait(driver, 10)
 
     chat.close_image_popup()
@@ -27,11 +26,15 @@ def test_chat_advanced_005(driver, login):# 퀴즈생성,퀴즈생성 완료시�
     WebDriverWait(driver, 10)
 
     chat.click_image_quiz()
-    response_text = chat.send_message("사칙연산, 객관식")
+    chat.send_message("사칙연산, 객관식")
 
-    WebDriverWait(driver, 30)
+    assert WebDriverWait(driver, 30).until(EC.visibility_of_element_located((
+        By.CSS_SELECTOR,
+        "div.bg-muted.p-3.rounded-md"
+    )))
 
-    assert len(response_text) > 0
+
+    
 
 def test_chat_advanced_006(driver, login):
     chat = chat_basic(driver)
@@ -41,11 +44,13 @@ def test_chat_advanced_006(driver, login):
     WebDriverWait(driver, 10)
 
     chat.click_image_quiz()
-    response_text = chat.send_message("사칙연산, 답이 복수인 객관식")
+    chat.send_message("사칙연산, 답이 복수인 객관식")
 
-    WebDriverWait(driver, 30)
+    assert WebDriverWait(driver, 30).until(EC.visibility_of_element_located((
+        By.CSS_SELECTOR,
+        "div.bg-muted.p-3.rounded-md"
+    )))
 
-    assert len(response_text) > 0
 
 def test_chat_advanced_007(driver, login):
     chat = chat_basic(driver)
@@ -55,11 +60,14 @@ def test_chat_advanced_007(driver, login):
     WebDriverWait(driver, 10)
 
     chat.click_image_quiz()
-    response_text = chat.send_message("사칙연산, 주관식")
+    chat.send_message("사칙연산, 주관식")
 
-    WebDriverWait(driver, 30)
+    assert WebDriverWait(driver, 30).until(EC.visibility_of_element_located((
+        By.CSS_SELECTOR,
+        "div.bg-muted.p-3.rounded-md"
+    )))
 
-    assert len(response_text) > 0
+    
 
 
 
