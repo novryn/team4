@@ -1,0 +1,32 @@
+name: QA Automation Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📦 코드 체크아웃
+      uses: actions/checkout@v4
+    
+    - name: 🐳 Docker 이미지 빌드
+      run: docker build -t qa-test-image .
+    
+    - name: 🧪 테스트 실행
+      run: |
+        docker run --name qa-test-container \
+          qa-test-image \
+          pytest tests/ -v --html=report.html --self-contained-html
+    
+    - name: 📊 테스트 결과 업로드
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report
+        path: report.html
+        retention-days: 30

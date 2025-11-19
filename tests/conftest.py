@@ -91,7 +91,7 @@ def chrome_driver_path():
     return path
 
 # ───────────────────────────────────────────────────────────────
-# 8. driver fixture (function scope)
+# 8. driver fixture (function scope)   --- 11/19 수정(황지애)
 # ───────────────────────────────────────────────────────────────
 
 @pytest.fixture
@@ -100,9 +100,14 @@ def driver(chrome_driver_path):
     # 각 테스트마다 새 브라우저 인스턴스 생성
     opts = Options()
     
-    # Headless 모드 설정
-    if os.getenv("HEADLESS", "0") == "1":
+    # CI 환경(GitHub Actions)에서만 headless
+    if os.getenv("CI"):
         opts.add_argument("--headless=new")
+        opts.add_argument("--no-sandbox")
+        opts.add_argument("--disable-dev-shm-usage")
+        opts.add_argument("--disable-gpu")
+    
+    # 모든 환경에서 동일한 창 크기
     opts.add_argument("--window-size=1920,1080")
     
     # 한국어 설정 추가
@@ -114,11 +119,11 @@ def driver(chrome_driver_path):
     # ChromeDriver 서비스 생성 (이미 설치된 경로 재사용)
     service = Service(chrome_driver_path)
     browser = webdriver.Chrome(service=service, options=opts)
+    
     yield browser
     
     # 테스트 종료 후 브라우저 닫기
     browser.quit()
-
 
 # ───────────────────────────────────────────────────────────────
 # 9. login fixture

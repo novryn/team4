@@ -7,6 +7,8 @@ webdriver-manager==4.0.2
 # Testing
 pytest==8.4.2
 pytest-base-url==2.1.0
+pytest-html==4.1.1
+pyperclip
 
 # HTTP
 requests==2.32.5
