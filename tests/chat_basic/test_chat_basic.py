@@ -9,7 +9,7 @@ import pyperclip
 
 
 
-'''
+
 def test_chat_basic_001(driver, login):# 채팅 입력, 정상 실행 
 
     chat = chat_basic(driver)
@@ -112,7 +112,7 @@ def test_chat_basic_007(driver, login):# 이미 입력한 채팅 수정
 
     chat.click_edit_admin()
 
-'''
+
 
 def test_chat_basic_008(driver, login): # 채팅 수정 선택했다 취소하기
     driver = login()
@@ -128,7 +128,7 @@ def test_chat_basic_008(driver, login): # 채팅 수정 선택했다 취소하�
     chat.click_edit()
     chat.edit_message("사과")
     chat.click_edit_cancel()
-'''
+
 
 def test_chat_basic_009(driver, login): # 스크롤바 기능 확인 1
     driver = login()
@@ -141,7 +141,6 @@ def test_chat_basic_009(driver, login): # 스크롤바 기능 확인 1
     )
     chat.send_message("자기소개를 부탁해")
 
-    chat.send_message("오늘 날짜를 알려줘")
 
     chat.scroll_bar()
 
@@ -202,4 +201,3 @@ def test_chat_basic_014(driver, login): # 스페이스바만 입력, 실행은 �
     assert len(response_text) > 0
     print(f"✅ Helpy 응답: {response_text}")
 
-'''

@@ -62,8 +62,8 @@ class chat_basic:
 
 
     def click_plus(self): # + 버튼 클릭
-       input_button = self.driver.find_element(By.CSS_SELECTOR, "button[aria-haspopup='true']")
-       input_button.click()
+        input_button = self.driver.find_element(By.CSS_SELECTOR, "button[aria-haspopup='true']")
+        input_button.click()
 
     def file_upload(self, file_name: str): # 파일 업로드 버튼 클릭
         PAGE_DIR = os.path.dirname(os.path.abspath(__file__)) # 현재 폴더 절대 경로로 반환
@@ -169,14 +169,34 @@ class chat_basic:
 
 
     def scroll_bar(self):
-        scroll_container = self.driver.find_element(By.CSS_SELECTOR,"div.relative.flex.flex-col.flex-grow.overflow-y-auto")
-        
-        before = self.driver.execute_script("return arguments[0].scrollTop;", scroll_container)
-        self.driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", scroll_container)
-        after = self.driver.execute_script("return arguments[0].scrollTop;", scroll_container)
+        container = self.driver.find_element(By.CSS_SELECTOR, "div.flex.flex-col.flex-grow.overflow-y-auto")
 
-        print(f"스크롤 이동 여부: {before} → {after}")
+        original = self.driver.execute_script("return arguments[0].scrollTop;", container)
 
+        # 📌 1) 맨 위로 이동
+        self.driver.execute_script("arguments[0].scrollTop = 0", container)
+        top_pos = self.driver.execute_script("return arguments[0].scrollTop;", container)
+
+        # 맨 위 이동 검증
+        moved_to_top = (top_pos == 0)
+
+        # 📌 2) 맨 아래로 이동
+        self.driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", container)
+        bottom_pos = self.driver.execute_script("return arguments[0].scrollTop;", container)
+
+        max_scroll = self.driver.execute_script(
+            "return arguments[0].scrollHeight - arguments[0].clientHeight;",
+            container,
+        )
+
+        # 맨 아래 이동 검증 (조금 오차 허용)
+        moved_to_bottom = abs(bottom_pos - max_scroll) < 2
+
+        print(f"맨 위 이동: {top_pos} (OK? {moved_to_top})")
+        print(f"맨 아래 이동: {bottom_pos} / max={max_scroll} (OK? {moved_to_bottom})")
+
+        return moved_to_top and moved_to_bottom
+    
     def reset_chat(self):
         wait = WebDriverWait(self.driver, 10)
     

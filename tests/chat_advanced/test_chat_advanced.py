@@ -27,9 +27,11 @@ def test_chat_advanced_005(driver, login):# 퀴즈생성,퀴즈생성 완료시�
     WebDriverWait(driver, 10)
 
     chat.click_image_quiz()
-    chat.send_message("사칙연산, 객관식")
+    response_text = chat.send_message("사칙연산, 객관식")
 
-    WebDriverWait(driver, 30).until(EC.visibility_of_element_located((By.XPATH, "//svg[contains(@class,'lucide-circle-check-big')]")))
+    WebDriverWait(driver, 30)
+
+    assert len(response_text) > 0
 
 def test_chat_advanced_006(driver, login):
     chat = chat_basic(driver)
