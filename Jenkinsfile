@@ -19,8 +19,17 @@ pipeline {
                 echo '🐳 Docker 이미지 빌드'
                 script {
                     // 기존 컨테이너/이미지 삭제
-                    bat "docker rm -f %CONTAINER_NAME% 2>nul || echo Container not found"
-                    bat "docker rmi -f %IMAGE_NAME% 2>nul || echo Image not found"
+                    try {
+                        bat "docker rm -f %CONTAINER_NAME%"
+                    } catch (Exception e) {
+                        echo "컨테이너 없음"
+                    }
+                    
+                    try {
+                        bat "docker rmi -f %IMAGE_NAME%"
+                    } catch (Exception e) {
+                        echo "이미지 없음"
+                    }
                     
                     // 새 이미지 빌드
                     bat "docker build -t %IMAGE_NAME% ."
@@ -55,7 +64,13 @@ pipeline {
     post {
         always {
             echo '🧹 정리'
-            bat "docker rm -f %CONTAINER_NAME% 2>nul || echo Already removed"
+            script {
+                try {
+                    bat "docker rm -f %CONTAINER_NAME%"
+                } catch (Exception e) {
+                    echo "컨테이너가 이미 삭제됨 또는 없음"
+                }
+            }
         }
         success {
             echo '✅ 테스트 성공!'
