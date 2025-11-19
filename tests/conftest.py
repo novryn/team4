@@ -89,7 +89,7 @@ def chrome_options():
 def chrome_driver_path():
     """ChromeDriver 경로"""
     if os.getenv("CI"):
-        return "chromedriver"
+        return None   # ← Selenium이 PATH에서 찾음
     else:
         return ChromeDriverManager().install()
 
@@ -120,8 +120,12 @@ def driver(chrome_driver_path):
         'intl.accept_languages': 'ko-KR,ko,en-US,en'
     })
     
-    # ChromeDriver 서비스 생성 (이미 설치된 경로 재사용)
-    service = Service(chrome_driver_path)
+    # None이면 Service() 경로 없이 생성
+    if chrome_driver_path:
+        service = Service(chrome_driver_path)
+    else:
+        service = Service()  # Selenium이 PATH에서 자동으로 찾음
+    
     browser = webdriver.Chrome(service=service, options=opts)
     
     yield browser
