@@ -265,3 +265,33 @@ def _get_login_page_avatar_src(driver, wait: WebDriverWait):
     로그인 페이지의 아바타 src 하나 반환
     """
     return _get_avatar_src(driver, LOGIN_PAGE_AVATAR, wait)
+
+
+def _close_login_popup(driver):
+    """로그인 화면 팝업 닫기 (명시적 대기만 사용)"""
+    selectors = [
+        ".PopupCloseBtn__CloseButtonArea-ch-front__sc-14jjsiy-2 button",
+        "button.PopupCloseBtn__CloseButton-ch-front__sc-14jjsiy-1",
+        "[class*='PopupCloseBtn__CloseButton']",
+    ]
+    
+    for selector in selectors:
+        try:
+            # 클릭 가능할 때까지 대기
+            close_btn = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+            )
+            close_btn.click()
+            
+            # 팝업이 사라질 때까지 대기
+            WebDriverWait(driver, 3).until(
+                EC.invisibility_of_element_located((By.CSS_SELECTOR, selector))
+            )
+            
+            print(f"✅ 로그인 팝업 닫음: {selector}")
+            return True
+        except:
+            continue
+    
+    print("⚠️ 로그인 팝업 없음")
+    return False

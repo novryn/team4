@@ -26,7 +26,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 # ───────────────────────────────────────────────────────────────
 from src.pages.base_page import BasePage
 from src.config.settings import get_default_admin
-from tests.helpers.common_helpers import _set_language_korean
+from tests.helpers.common_helpers import (_set_language_korean, _close_login_popup, 
+)
 
 # ───────────────────────────────────────────────────────────────
 # 4. 환경변수 기반 아티팩트 설정
@@ -147,6 +148,9 @@ def login(driver):
             "?continue_to=https%3A%2F%2Fqaproject.elice.io%2Fai-helpy-chat"
         )
         
+        # 🆕 3-1. 팝업 닫기 (페이지 로드 직후!)
+        _close_login_popup(driver)
+
         # 4. 쿠키/스토리지 정리
         driver.delete_all_cookies()
         try:
