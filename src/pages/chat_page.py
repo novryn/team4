@@ -84,7 +84,7 @@ class chat_basic:
    
 
     def click_make_image(self): # 이미지 생성 버튼 클릭
-        make_image_button = self.driver.find_element(By.XPATH, "/html/body/div[3]/div[3]/ul/div[3]")
+        make_image_button = self.driver.find_element(By.XPATH, "/html/body/div[3]/div[3]/ul/div[3]")# 경로변경하기
         make_image_button.click()
 
     def click_clipboard(self): # 클립보드 버튼 클릭
@@ -135,7 +135,7 @@ class chat_basic:
         input_button.click()
 
     def click_feedback_cancel(self):
-        input_button = self.driver.find_elementBy.XPATH,("//button[.//*[local-name()='svg' and contains(@class,'lucide-x')]]")
+        input_button = self.driver.find_element(By.XPATH,("//button[.//*[local-name()='svg' and contains(@class,'lucide-x')]]"))
         input_button.click()
 
     def click_edit(self): # 수정 제출 버튼 클릭
@@ -160,12 +160,11 @@ class chat_basic:
         input_box.send_keys(message)
 
     def click_edit_admin(self):
-        input_button = self.driver.find_element(By.XPATH, "//button[normalize-space()='취소' or .//span[normalize-space()='확인']]")
-        input_button.click()
+        input_button = self.driver.find_element(By.CSS_SELECTOR, "button.confirm-edit")
         input_button.click()
 
     def click_edit_cancel(self):
-        input_button = self.driver.find_element(By.XPATH, "//button[normalize-space()='취소' or .//span[normalize-space()='취소']]")
+        input_button = self.driver.find_element(By.XPATH,"//button[contains(@class, 'hover:bg-accent') and contains(@class, 'py-2')]")
         input_button.click()
 
 
