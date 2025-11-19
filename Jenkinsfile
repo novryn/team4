@@ -2,7 +2,6 @@ pipeline {
     agent any
     
     environment {
-        // Docker 이미지 이름
         IMAGE_NAME = "qa-test-image"
         CONTAINER_NAME = "qa-test-container"
     }
@@ -19,14 +18,12 @@ pipeline {
             steps {
                 echo '🐳 Docker 이미지 빌드'
                 script {
-                    // 기존 이미지 삭제 (있다면)
-                    bat '''
-                        docker rm -f %CONTAINER_NAME% 2>nul || echo Container not found
-                        docker rmi -f %IMAGE_NAME% 2>nul || echo Image not found
-                    '''
+                    // 기존 컨테이너/이미지 삭제
+                    bat "docker rm -f %CONTAINER_NAME% 2>nul || echo Container not found"
+                    bat "docker rmi -f %IMAGE_NAME% 2>nul || echo Image not found"
                     
                     // 새 이미지 빌드
-                    bat 'docker build -t %IMAGE_NAME% .'
+                    bat "docker build -t %IMAGE_NAME% ."
                 }
             }
         }
@@ -35,13 +32,7 @@ pipeline {
             steps {
                 echo '🧪 테스트 실행'
                 script {
-                    // 컨테이너 실행하여 테스트
-                    bat '''
-                        docker run --name %CONTAINER_NAME% ^
-                            -v %cd%:/workspace ^
-                            %IMAGE_NAME% ^
-                            pytest tests/ --html=report.html --self-contained-html
-                    '''
+                    bat "docker run --name %CONTAINER_NAME% -v %cd%:/workspace %IMAGE_NAME% pytest tests/ --html=report.html --self-contained-html"
                 }
             }
         }
@@ -49,7 +40,6 @@ pipeline {
         stage('Collect Results') {
             steps {
                 echo '📊 테스트 결과 수집'
-                // HTML 리포트 저장
                 publishHTML([
                     reportDir: '.',
                     reportFiles: 'report.html',
@@ -62,10 +52,7 @@ pipeline {
     post {
         always {
             echo '🧹 정리'
-            script {
-                // 컨테이너 정리
-                bat 'docker rm -f %CONTAINER_NAME% 2>nul || echo Already removed'
-            }
+            bat "docker rm -f %CONTAINER_NAME% 2>nul || echo Already removed"
         }
         success {
             echo '✅ 테스트 성공!'
