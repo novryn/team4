@@ -75,28 +75,41 @@ class ChatHistoryTests:
         assert history_area is not None, "히스토리 영역이 존재하지 않음!"
 
     # ----------------------- CHAT-HIS-003 -----------------------
-    @pytest.mark.ui
-    @pytest.mark.medium
-    def test_chat_history_scroll(self):
-        # BasePage로 대화 항목 가져오기
-        chat_items = self.page.get_chat_list()
-        # 대화 존재 확인
-        assert len(chat_items) > 0, "대화 항목이 존재하지 않습니다."
-        print(f"대화 목록이 {len(chat_items)}개 있습니다.")
+    # ---------------- TEST 3: 에이전트 실행 화면 상단 요소 확인 ----------------
+@pytest.mark.ui
+@pytest.mark.medium
+def test_agent_header_display(self, driver, login):
+    driver = login()
+    wait = WebDriverWait(driver, 20)
+    go_to_agent_page(driver, wait)
 
-        # 스크롤 영역 확인
-        chat_area = self.page.wait_for_element((By.CSS_SELECTOR, '[data-testid="virtuoso-scroller"]'))
-        has_scrollbar = self.driver.execute_script(
-            "return arguments[0].scrollHeight > arguments[0].clientHeight;", chat_area
-        )
-        if has_scrollbar:
-            print("스크롤 영역 존재: 스크롤 가능")
-        else:
-            print("스크롤 영역 존재하지만, 대화가 충분하지 않아 스크롤 필요 없음")
+    # 첫 번째 카드 클릭 (stale element 재시도)
+    retries = 2
+    for _ in range(retries):
+        try:
+            first_card = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "div[data-index='0'] a.MuiCard-root"))
+            )
+            first_card.click()
+            break
+        except StaleElementReferenceException:
+            time.sleep(0.5)
+    else:
+        driver.save_screenshot("artifacts/first_ai_card_not_found.png")
+        raise Exception("첫 번째 AI 카드 찾기 실패")
 
-        # 어썰트
-        assert chat_area is not None
-        assert isinstance(has_scrollbar, bool)
+    # 상단 요소 표시 확인
+    try:
+        wait.until(EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, "div.MuiStack-root.css-143xypo img.MuiAvatar-img")))
+        wait.until(EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, "div.MuiStack-root.css-143xypo h6.MuiTypography-root")))
+        wait.until(EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, "div.MuiStack-root.css-143xypo p.MuiTypography-body1")))
+    except TimeoutException:
+        driver.save_screenshot("artifacts/agent_header_not_found.png")
+        raise Exception("에이전트 실행 상단 요소 확인 실패")
+    print("✅ 에이전트 상단 정보 정상 표시됨")
 
     # ----------------------- CHAT-HIS-004 -----------------------
     @pytest.mark.ui
