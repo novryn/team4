@@ -11,11 +11,13 @@ import time
 def go_to_agent_page(driver, wait):
     # Agent Explorer 클릭 후 Custom Agent 페이지로 이동
     try:
+        # CSS 먼저 시도
         element = wait.until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "a.MuiListItemButton-root[href='/ai-helpy-chat/agent']"))
         )
     except TimeoutException:
         try:
+            # CSS 실패 시 XPath fallback
             element = wait.until(
                 EC.element_to_be_clickable((By.XPATH, '//li[a[contains(@href,"/ai-helpy-chat/agent")]]/a'))
             )
