@@ -25,9 +25,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 # 3. 내부 프로젝트 모듈
 # ───────────────────────────────────────────────────────────────
 from src.pages.base_page import BasePage
+from src.pages.account_page import AccountPage
 from src.config.settings import get_default_admin
-from tests.helpers.common_helpers import (_set_language_korean,  
-)
 
 # ───────────────────────────────────────────────────────────────
 # 4. 환경변수 기반 아티팩트 설정
@@ -186,7 +185,8 @@ def login(driver):
         WebDriverWait(driver, 30).until(EC.url_contains("/ai-helpy-chat"))
         
         # 9. 언어를 한국어로 설정
-        _set_language_korean(driver)
+        account_page = AccountPage(driver)
+        account_page.set_language_korean()
 
         return driver
 
