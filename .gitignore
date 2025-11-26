@@ -32,5 +32,8 @@ artifacts/
 *.png
 *.html
 *.pyc
+allure-results/
+allure-report/
+
 
 
