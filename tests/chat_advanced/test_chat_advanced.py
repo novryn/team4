@@ -1,10 +1,10 @@
-from src.pages.chat_page import chat_basic
+from src.pages.chat_page import ChatPage
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 def test_chat_advanced_001(driver, login):
-    chat = chat_basic(driver)
+    chat = ChatPage(driver)
     chat.open_chat(login)
 
     chat.click_plus()
@@ -19,7 +19,7 @@ def test_chat_advanced_001(driver, login):
     chat.close_image_popup()
 
 def test_chat_advanced_005(driver, login):# 퀴즈생성,퀴즈생성 완료시까지 대기하는 부분 미완성 
-    chat = chat_basic(driver)
+    chat = ChatPage(driver)
     chat.open_chat(login)
     
     chat.click_plus()
@@ -37,7 +37,7 @@ def test_chat_advanced_005(driver, login):# 퀴즈생성,퀴즈생성 완료시�
     
 
 def test_chat_advanced_006(driver, login):
-    chat = chat_basic(driver)
+    chat = ChatPage(driver)
     chat.open_chat(login)
     
     chat.click_plus()
@@ -53,7 +53,7 @@ def test_chat_advanced_006(driver, login):
 
 
 def test_chat_advanced_007(driver, login):
-    chat = chat_basic(driver)
+    chat = ChatPage(driver)
     chat.open_chat(login)
     
     chat.click_plus()
