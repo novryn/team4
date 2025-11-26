@@ -19,7 +19,7 @@ from src.pages.base_page import BasePage
   # 공통 기능 상속용
 
 @pytest.mark.usefixtures("driver", "login")
-class ChatHistoryTests:
+class TestChatHistory:
 
     @pytest.fixture(autouse=True)
     def setup(self, driver, login):
