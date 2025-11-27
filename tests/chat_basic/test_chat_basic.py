@@ -5,9 +5,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import pyperclip
-
-
-
+import os
+import pytest
 
 
 def test_chat_basic_001(driver, login):# 채팅 입력, 정상 실행 
@@ -43,7 +42,10 @@ def test_chat_basic_003(driver, login):# 이미지 업로드
 
 
 
-
+@pytest.mark.skipif(
+    os.getenv("CI") == "true",
+    reason="클립보드는 GUI 환경에서만 테스트"
+)
 def test_chat_basic_004(driver, login):# 클립보드, 정상 실행 
     chat = ChatPage(driver)
     chat.open_chat(login)
