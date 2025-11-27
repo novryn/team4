@@ -20,6 +20,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
+import allure
 
 # ───────────────────────────────────────────────────────────────
 # 3. 내부 프로젝트 모듈
@@ -35,7 +36,7 @@ ARTIFACT_DIR = os.getenv("ARTIFACT_DIR", "artifacts")  # 저장 폴더
 CAPTURE_ON_XFAIL = os.getenv("CAPTURE_ON_XFAIL", "0") == "1"  # XFAIL도 캡처할지
 
 # ───────────────────────────────────────────────────────────────
-# 5. 유틸 함수 (11/13 황지애. chrome_options, chrome_driver_path 추가. driver, login 수정)
+# 5. 유틸 함수
 # ───────────────────────────────────────────────────────────────
 
 def _safe_name(nodeid: str) -> str:
@@ -50,27 +51,25 @@ def _capture(driver, nodeid: str, tag: str = "fail"):
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     base = f"{_timestamp()}_{_safe_name(nodeid)}_{tag}"
     png = os.path.join(ARTIFACT_DIR, base + ".png")
-    html = os.path.join(ARTIFACT_DIR, base + ".html")
+    
     try:
         driver.save_screenshot(png)
+        # Allure에 첨부
+        with open(png, "rb") as f:
+            allure.attach(f.read(), name="screenshot", attachment_type=allure.attachment_type.PNG)
     except WebDriverException:
-        pass
-    try:
-        with open(html, "w", encoding="utf-8") as f:
-            f.write(driver.page_source or "")
-    except Exception:
         pass
     
     # 참고용 경로 출력
     print(f"[artifact] {png}")
-    print(f"[artifact] {html}")
 
 # ───────────────────────────────────────────────────────────────
-# 6. Chrome 설정(브라우저 옵션 fixture) - Chrome 옵션을 세션당 한 번만 생성
+# 6. Chrome 설정(브라우저 옵션 fixture)      --- 11/13 추가(황지애)
 # ───────────────────────────────────────────────────────────────
 
 @pytest.fixture(scope="session")
 def chrome_options():
+    """Chrome 옵션을 세션당 한 번만 생성"""
     opts = Options()
     if os.getenv("HEADLESS", "0") == "1":
         opts.add_argument("--headless=new")
@@ -133,7 +132,7 @@ def driver(chrome_driver_path):
     browser.quit()
 
 # ───────────────────────────────────────────────────────────────
-# 9. login fixture
+# 9. login fixture                         --- 11/13 수정(황지애)
 # ───────────────────────────────────────────────────────────────
 
 @pytest.fixture
@@ -202,12 +201,12 @@ def pytest_runtest_makereport(item, call):
     rep = outcome.get_result()
     setattr(item, "rep_" + rep.when, rep)
     
-# XFAIL 캡처 스위치 ← 여기만 True/False로 켜고 끄면 됨. True로 바꾸면 xfail도 캡처
-CAPTURE_XFAIL = False
-
 # ───────────────────────────────────────────────────────────────
 # 11. auto screenshot fixture (테스트 실패 시 자동 캡처)
 # ───────────────────────────────────────────────────────────────
+
+# XFAIL 캡처 스위치 ← True로 바꾸면 xfail도 캡처
+CAPTURE_XFAIL = False
 
 @pytest.fixture(autouse=True)
 def _auto_artifacts_on_fail(request, driver):
