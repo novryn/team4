@@ -11,6 +11,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# GitHub Pages 배포 권한 (Actions가 Pages에 배포하기 위해 필요)
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -41,12 +47,30 @@ jobs:
         ADMIN3_USERNAME: ${{ secrets.ADMIN3_USERNAME }}
         ADMIN3_PASSWORD: ${{ secrets.ADMIN3_PASSWORD }}
       run: |
-        pytest tests/ -v --html=report.html --self-contained-html
+        pytest tests/ --alluredir=allure-results
     
-    - name: 📊 테스트 결과 업로드
-      if: always()  # 실패해도 업로드
-      uses: actions/upload-artifact@v4
+    - name: 📥 Allure 이력 가져오기
+      uses: actions/checkout@v4
+      if: always()
+      continue-on-error: true
       with:
-        name: test-report
-        path: report.html
-        retention-days: 30
+        ref: gh-pages
+        path: gh-pages
+    
+    - name: 📊 Allure 리포트 생성 (이력 포함)
+      uses: simple-elf/allure-report-action@master
+      if: always()
+      with:
+        allure_results: allure-results
+        allure_history: allure-history
+        keep_reports: 20
+    
+    - name: 📤 Pages artifact 업로드
+      uses: actions/upload-pages-artifact@v3
+      if: always()
+      with:
+        path: allure-history
+    
+    - name: 🚀 GitHub Pages에 배포
+      uses: actions/deploy-pages@v4
+      if: always()
