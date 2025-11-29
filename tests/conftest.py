@@ -22,6 +22,7 @@ from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
 import allure
 import subprocess
+import tempfile
 
 # ───────────────────────────────────────────────────────────────
 # 3. 내부 프로젝트 모듈
@@ -49,20 +50,34 @@ def _timestamp() -> str:
     return datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
 def _capture(driver, nodeid: str, tag: str = "fail"):
-    os.makedirs(ARTIFACT_DIR, exist_ok=True)
-    base = f"{_timestamp()}_{_safe_name(nodeid)}_{tag}"
-    png = os.path.join(ARTIFACT_DIR, base + ".png")
-    
+    """테스트 실패 시 스크린샷을 Allure 리포트에만 첨부"""
+        
     try:
-        driver.save_screenshot(png)
+        # 임시 파일로 스크린샷 저장
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            tmp_path = tmp.name
+        
+        driver.save_screenshot(tmp_path)
+        
         # Allure에 첨부
-        with open(png, "rb") as f:
-            allure.attach(f.read(), name="screenshot", attachment_type=allure.attachment_type.PNG)
-    except WebDriverException:
-        pass
-    
-    # 참고용 경로 출력
-    print(f"[artifact] {png}")
+        with open(tmp_path, "rb") as f:
+            allure.attach(
+                f.read(),
+                name=f"{_safe_name(nodeid)}_{tag}",
+                attachment_type=allure.attachment_type.PNG
+            )
+        
+        print(f"[allure] Screenshot attached: {nodeid}")
+        
+    except WebDriverException as e:
+        print(f"[allure] Screenshot failed: {e}")
+    finally:
+        # 임시 파일 정리
+        try:
+            if 'tmp_path' in locals():
+                os.unlink(tmp_path)
+        except:
+            pass
 
 # ───────────────────────────────────────────────────────────────
 # 6. Chrome 설정(브라우저 옵션 fixture)      --- 11/13 추가(황지애)
@@ -276,11 +291,12 @@ def pytest_sessionfinish(session, exitstatus):
         
     print("\n📊 Allure 리포트 생성 중...")
     subprocess.run([
-        "allure", "generate", 
+        "allure.cmd", "generate", 
         "allure-results", 
         "-o", "allure-report"
         # "--clean" ← 이력 유지
-    ])
+        ], shell=True)
     
     print("🌐 브라우저에서 리포트 열기...")
-    subprocess.run(["allure", "open", "allure-report"])
+    subprocess.run(["allure.cmd", "open", "allure-report"
+                    ], shell=True)
