@@ -48,15 +48,7 @@ jobs:
         ADMIN3_PASSWORD: ${{ secrets.ADMIN3_PASSWORD }}
       run: |
         pytest tests/ --alluredir=allure-results
-    
-    - name: 📥 Allure 이력 가져오기
-      uses: actions/checkout@v4
-      if: always()
-      continue-on-error: true
-      with:
-        ref: gh-pages
-        path: gh-pages
-    
+       
     - name: 📊 Allure 리포트 생성 (이력 포함)
       uses: simple-elf/allure-report-action@master
       if: always()
