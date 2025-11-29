@@ -56,13 +56,13 @@ jobs:
         allure_results: allure-results
         allure_history: allure-history
         keep_reports: 20
-    
+     
     - name: 📤 Pages artifact 업로드
       uses: actions/upload-pages-artifact@v3
       if: always()
       with:
-        path: allure-history
-    
+        path: allure-history   
+        
     - name: 🚀 GitHub Pages에 배포
       uses: actions/deploy-pages@v4
       if: always()
