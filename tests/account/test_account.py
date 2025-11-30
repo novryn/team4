@@ -143,7 +143,10 @@ def test_logout_prevents_back_navigation(driver, login):
     WebDriverWait(driver, 5).until(
         lambda d: d.execute_script("return document.readyState") == "complete"
     )
-    
+
+    # 뒤로 가기 후 리다이렉션 대기 (메인 페이지로 가지 못하고 다시 로그인 페이지로)
+    wait.until(EC.url_contains("signin"))
+
     # 4) URL 확인 - signin/history에 머물러야 함
     current_url = driver.current_url
     print(f"뒤로가기 후 URL: {current_url}")
@@ -193,13 +196,19 @@ def test_account_management_page_ui(driver, login):
     account.open_account_mgmt_page()
     
     # 페이지 완전 로드 대기
-    WebDriverWait(driver, 3).until(
+    WebDriverWait(driver, 10).until(
         lambda d: d.execute_script("return document.readyState") == "complete"
     )
+
+    # React 렌더링 완료 대기 - 첫 번째 섹션이 나타날 때까지
+    wait.until(EC.presence_of_element_located((
+        By.XPATH, 
+        "//*[contains(text(), '기본 정보') or contains(text(), 'Basic Information')]"
+    )))
     
     print("\n=== 프로필 영역 확인 ===")
     
-    # 6) 프로필 영역 확인 (존재 여부만, 값은 체크 안 함)
+    # 4) 프로필 영역 확인 (존재 여부만, 값은 체크 안 함)
     profile_checks = {
         "프로필 이미지": {
             "selector": ".MuiAvatar-root, [class*='avatar'], img[alt*='profile']",
@@ -269,7 +278,7 @@ def test_account_management_page_ui(driver, login):
     
     print("\n=== 섹션 목록 확인 ===")
     
-    # 7) 섹션 목록 확인
+    # 5) 섹션 목록 확인
     expected_sections = [
         "기본 정보",
         "프로필 이미지",
@@ -585,12 +594,14 @@ def test_organization_admin_menu_access(driver, login):
         EC.presence_of_element_located((By.TAG_NAME, "body"))
     )
 
-    # 🆕 3-6) 최소한 버튼이 하나라도 있는지 확인
+    # 🆕 3-6) 톱니바퀴 버튼이 실제로 나타날 때까지 대기
     WebDriverWait(driver, 10).until(
-        lambda d: len(d.find_elements(By.TAG_NAME, "button")) > 0
+        EC.presence_of_element_located((
+            By.CSS_SELECTOR, 
+            "svg[data-icon='gear'], svg[data-testid='gearIcon']"
+        ))
     )
-
-    print(f"✅ 메인 페이지 완전 로드 (버튼 개수: {len(driver.find_elements(By.TAG_NAME, 'button'))})")
+    print("✅ 톱니바퀴 아이콘 로드 확인")
 
     # 4) 톱니바퀴 버튼 클릭
     print("\n=== 톱니바퀴 버튼 찾기 ===")
