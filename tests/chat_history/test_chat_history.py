@@ -15,8 +15,7 @@ from selenium.common.exceptions import TimeoutException
 
 
 # 로컬/프로젝트 모듈
-from src.pages.base_page import BasePage
-  # 공통 기능 상속용
+from src.pages.chat_page import ChatPage  
 
 @pytest.mark.usefixtures("driver", "login")
 class TestChatHistory:
@@ -27,7 +26,7 @@ class TestChatHistory:
         클래스 내 모든 테스트에서 driver, page를 공유하도록 초기화
         """
         self.driver = login()  # 로그인 후 driver
-        self.page = BasePage(self.driver)
+        self.page = ChatPage(self.driver)
         self.wait = WebDriverWait(self.driver, 20)  # 공통 wait
 
     # ----------------------- CHAT-HIS-001 -----------------------
@@ -79,7 +78,7 @@ class TestChatHistory:
     @pytest.mark.ui
     @pytest.mark.medium
     def test_chat_history_scroll(self):
-        # BasePage로 대화 항목 가져오기
+        # ChatPage로 대화 항목 가져오기
         chat_items = self.page.get_chat_list()
         # 대화 존재 확인
         assert len(chat_items) > 0, "대화 항목이 존재하지 않습니다."
@@ -759,11 +758,11 @@ class TestChatHistory:
             driver.save_screenshot("CHAT-HIS-LOGIN_TIMEOUT.png")
             pytest.fail("로그인 후 페이지 로드 실패 (Timeout)")
 
-        # 2. Mock BasePage.get_chat_list (Python 측 API 호출 차단)
+        # 2. Mock ChatPage.get_chat_list (Python 측 API 호출 차단)
         def mock_get(*args, **kwargs):
             raise Exception("Simulated network failure")
 
-        mocker.patch.object(BasePage, "get_chat_list", side_effect=mock_get)
+        mocker.patch.object(ChatPage, "get_chat_list", side_effect=mock_get)
         print("get_chat_list Python 호출 모킹 완료")
 
         # 3. JS 변수 직접 세팅으로 실패 상태 시뮬레이션
