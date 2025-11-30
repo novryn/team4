@@ -22,7 +22,10 @@ class AccountPage(BasePage):
         By.XPATH,
         "//*[contains(text(), '계정 관리') or contains(text(), 'Account Management')]"
     )
-    PROFILE_EDIT_BUTTON = (By.CSS_SELECTOR, "svg[data-icon='pen-to-square']")
+    PROFILE_EDIT_BUTTON = (
+        By.XPATH,
+        "//svg[@data-icon='pen-to-square']/ancestor::button"
+    )
     FILE_INPUT = (By.CSS_SELECTOR, "input[type='file'][accept^='image']")
 
     def __init__(self, driver, timeout=15):
@@ -102,10 +105,11 @@ class AccountPage(BasePage):
 
     def click_profile_avatar_edit_button(self):
         """프로필 아바타 편집 버튼 클릭"""
-        btn = self.wait_for_clickable(self.PROFILE_EDIT_BUTTON)
-        self.scroll_into_view(btn)
-        btn.click()
-        print("✅ 계정 관리 편집 버튼 클릭")
+        # SVG 아이콘 대신 부모 버튼 요소 찾기
+        edit_button = self.wait_for_clickable(self.PROFILE_EDIT_BUTTON)
+        self.scroll_into_view(edit_button)
+        edit_button.click()
+        print("✅ 프로필 아바타 편집 버튼 클릭")
 
     def upload_profile_avatar_image(self, filename: str = "profile_avatar.jpg"):
         """
