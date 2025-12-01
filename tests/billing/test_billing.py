@@ -6,8 +6,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
-# Pages import
-from src.pages.base_page import BasePage
 from src.pages.billing_page import BillingPage
 
 # ======================
@@ -218,7 +216,6 @@ def test_prompt_decreases_credit(driver, login):
 def test_payment_history_button_visible(driver, login):
     driver = login()
     wait = WebDriverWait(driver, 10)
-    base = BasePage(driver)
     billing = BillingPage(driver)
     
     # 메인 페이지 진입 확인
@@ -227,7 +224,7 @@ def test_payment_history_button_visible(driver, login):
     print("✅ 메인 페이지 진입")
     
     # 프로필 클릭
-    base.click_profile()
+    billing.click_profile()
     
     # Payment History 버튼 찾기
     payment_history = billing.find_payment_history()
@@ -386,7 +383,19 @@ def test_auto_recharge_toggle_exists(driver, login):
     
     # 2-2) 크레딧 페이지 로드 확인
     wait.until(EC.url_contains("/billing/payments/credit"))
-    print("✅ 크레딧 페이지 로드")
+    
+    # 🆕 페이지 완전 로드 대기
+    wait.until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    # 🆕 페이지 기본 컨텐츠 렌더링 대기 (라디오 버튼이나 다른 요소로)
+    wait.until(EC.presence_of_element_located((
+        By.CSS_SELECTOR,
+        "input[type='radio'], button, h1, h2"  # 페이지에 뭔가 렌더링됐다는 증거
+    )))
+
+    print("✅ 크레딧 페이지 완전 로드")
     
     # 3) 페이지 끝까지 스크롤 (자동 충전 섹션 찾기)
     def scroll_to_auto_recharge():
@@ -394,42 +403,40 @@ def test_auto_recharge_toggle_exists(driver, login):
         max_scrolls = 15
         
         for i in range(max_scrolls):
-            # "크레딧 자동 충전" 텍스트 찾기
-            try:
-                section = driver.find_element(
-                    By.XPATH, 
-                    "//*[contains(text(), '크레딧 자동 충전')]"
-                )
-                if section.is_displayed():
-                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", section)
-                    
-                    # 스크롤 후 안정화 대기 (증가)
-                    WebDriverWait(driver, 3).until(
-                        lambda d: d.execute_script("return document.readyState") == "complete"
-                    )
-                    
-                    # 실제 토글 버튼이 나타날 때까지 추가 대기
-                    WebDriverWait(driver, 5).until(
-                        EC.visibility_of_element_located((By.ID, "credit-auto-topup-switch"))
-                    )
-                    
-                    print("✅ '크레딧 자동 충전' 섹션 및 토글 버튼 발견")
-                    return True
-            except:
-                pass
-            
-            # 못 찾았으면 계속 스크롤
-            last_height = driver.execute_script("return document.body.scrollHeight")
+            # 스크롤 먼저
             driver.execute_script("window.scrollBy(0, 500);")
-            
-            # 스크롤 후 안정화 (증가)
             WebDriverWait(driver, 2).until(
                 lambda d: d.execute_script("return document.readyState") == "complete"
             )
             
-            # 더 이상 스크롤 안 되면 중단
+            # 모든 h6 타이틀 찾기
+            try:
+                titles = driver.find_elements(
+                    By.CSS_SELECTOR,
+                    "span.MuiTypography-h6.MuiCardHeader-title"
+                )
+                
+                for title in titles:
+                    if "크레딧 자동 충전" in title.text or "자동 충전" in title.text:
+                        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", title)
+                        WebDriverWait(driver, 3).until(
+                            lambda d: d.execute_script("return document.readyState") == "complete"
+                        )
+                        
+                        # 토글 버튼 대기
+                        WebDriverWait(driver, 5).until(
+                            EC.presence_of_element_located((By.ID, "credit-auto-topup-switch"))
+                        )
+                        
+                        print("✅ '크레딧 자동 충전' 섹션 발견")
+                        return True
+            except:
+                pass
+            
+            # 페이지 끝 체크
+            last_height = driver.execute_script("return document.body.scrollHeight")
             new_height = driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height:
+            if new_height == last_height and i > 0:
                 print("⚠️ 페이지 끝에 도달")
                 break
         
