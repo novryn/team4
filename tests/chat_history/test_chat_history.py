@@ -21,7 +21,7 @@ from src.pages.chat_page import ChatPage
 class TestChatHistory:
 
     @pytest.fixture(autouse=True)
-    def setup(self, driver, login):
+    def setup(self, login):
         """
         클래스 내 모든 테스트에서 driver, page를 공유하도록 초기화
         """
@@ -181,6 +181,15 @@ class TestChatHistory:
             self.page.scroll_into_view(save_button)
             save_button.click()
             print("새 대화 입력 및 저장 완료")
+
+            # 🆕 AI 응답 생성 완료 대기 (최대 30초)
+            WebDriverWait(self.driver, 30).until(
+                EC.presence_of_element_located((
+                    By.CSS_SELECTOR, 
+                    "div[data-step-type='assistant_message'] .prose"
+                ))
+            )
+            print("✅ AI 응답 생성 완료")
 
             chat_items = self.page.get_chat_list()
             assert any(test_message in item.text for item in chat_items), "새 대화가 히스토리에 저장되지 않았습니다."
