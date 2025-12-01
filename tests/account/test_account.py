@@ -3,8 +3,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# Pages import
-from src.pages.base_page import BasePage
 from src.pages.account_page import AccountPage
 
 # ======================
@@ -100,8 +98,8 @@ def test_duplicate_email_registration_blocked(driver):
         
     except Exception as e:
         # 디버깅용 스크린샷
-        base = BasePage(driver)
-        base.take_screenshot("duplicate_email_error.png")
+        account = AccountPage(driver)
+        account.take_screenshot("duplicate_email_error.png")
         with open("duplicate_email_page.html", "w", encoding="utf-8") as f:
             f.write(driver.page_source)
         print("⚠️ 디버그 파일 저장: duplicate_email_error.png, duplicate_email_page.html")
@@ -114,7 +112,7 @@ def test_logout_prevents_back_navigation(driver, login):
     로그아웃 후 브라우저 뒤로가기로 메인 페이지 재진입 차단 확인
     """ 
     wait = WebDriverWait(driver, 15)
-    base = BasePage(driver)
+    account = AccountPage(driver)
     
     # 1) 로그인
     driver = login()
@@ -129,7 +127,7 @@ def test_logout_prevents_back_navigation(driver, login):
     print("\n=== 로그아웃 시도 ===")
     print(f"로그아웃 전 URL: {driver.current_url}")
     
-    base.logout()
+    account.logout()
     
     # 로그인 페이지 이동 대기
     wait.until(EC.url_contains("signin"))
@@ -178,7 +176,6 @@ def test_account_management_page_ui(driver, login):
     """
         
     wait = WebDriverWait(driver, 15)
-    base = BasePage(driver)
     account = AccountPage(driver)
     
     # 1) 로그인
@@ -190,7 +187,7 @@ def test_account_management_page_ui(driver, login):
     print("✅ 메인 페이지 진입")
     
     # 2) 프로필 버튼 클릭
-    base.click_profile()
+    account.click_profile()
     
     # 3) 계정 관리 클릭
     account.open_account_mgmt_page()
@@ -200,11 +197,12 @@ def test_account_management_page_ui(driver, login):
         lambda d: d.execute_script("return document.readyState") == "complete"
     )
 
-    # React 렌더링 완료 대기 - 첫 번째 섹션이 나타날 때까지
+    # React 렌더링 완료 대기 - 마지막 섹션이 나타날 때까지
     wait.until(EC.presence_of_element_located((
         By.XPATH, 
-        "//*[contains(text(), '기본 정보') or contains(text(), 'Basic Information')]"
+        "//*[contains(text(), '계정 삭제') or contains(text(), 'Delete Account')]"
     )))
+    print("✅ 모든 섹션 렌더링 완료")
     
     print("\n=== 프로필 영역 확인 ===")
     
@@ -316,7 +314,6 @@ def test_profile_image_upload_and_reflection(driver, login):
     """
     
     wait = WebDriverWait(driver, 15)
-    base = BasePage(driver)
     account = AccountPage(driver)
     
     # 1) 로그인
@@ -328,10 +325,15 @@ def test_profile_image_upload_and_reflection(driver, login):
     print("✅ 메인 페이지 진입")
     
     # 2) 프로필 버튼 클릭
-    base.click_profile()
+    account.click_profile()
     
     # 3) 계정 관리 페이지 열기
     account.open_account_mgmt_page()
+
+    # 🆕 편집 버튼 렌더링 대기
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(account.PROFILE_EDIT_BUTTON)
+    )
     
     # 4) 프로필 이미지 편집 버튼 클릭
     account.click_profile_avatar_edit_button()
@@ -399,7 +401,7 @@ def test_profile_image_upload_and_reflection(driver, login):
     print("✅ 메인 페이지 2곳 아바타 src 확인 완료")
 
     # 8) 로그아웃 후 로그인 페이지 아바타 비교
-    base.logout()
+    account.logout()
 
     # 렌더링 안정화
     print("🔍 로그아웃 후 readyState 대기 시작")
@@ -430,7 +432,6 @@ def test_profile_image_removal_and_reflection(driver, login):
     """
     
     wait = WebDriverWait(driver, 15)
-    base = BasePage(driver)
     account = AccountPage(driver)
     
     # 1) 로그인
@@ -442,10 +443,15 @@ def test_profile_image_removal_and_reflection(driver, login):
     print("✅ 메인 페이지 진입")
     
     # 2) 프로필 버튼 클릭
-    base.click_profile()
+    account.click_profile()
     
     # 3) 계정 관리 페이지 열기
     account.open_account_mgmt_page()
+
+    # 🆕 편집 버튼 렌더링 대기
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(account.PROFILE_EDIT_BUTTON)
+    )
     
     # 4) 프로필 이미지 편집 버튼 클릭
     account.click_profile_avatar_edit_button()
@@ -505,7 +511,7 @@ def test_profile_image_removal_and_reflection(driver, login):
     print("✅ 메인 페이지 2곳 아바타 src 확인 완료")
 
     # 8) 로그아웃 후 로그인 페이지 아바타 비교
-    base.logout()
+    account.logout()
 
     # 렌더링 안정화
     print("🔍 로그아웃 후 readyState 대기 시작")
@@ -537,12 +543,11 @@ def test_organization_admin_menu_access(driver, login):
     """
     
     wait = WebDriverWait(driver, 15)
-    base = BasePage(driver)
     account = AccountPage(driver)
     
     # 1) 로그인 → 계정 관리 페이지
     driver = login()
-    base.click_profile()
+    account.click_profile()
     account.open_account_mgmt_page()
     
     # 2) 내 기관 탭 클릭
